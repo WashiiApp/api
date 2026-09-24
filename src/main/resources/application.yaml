@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: api
+  datasource:
+    url: jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?user=postgres.usxgpdppfsifsokwiqly&password=Washii@2026
