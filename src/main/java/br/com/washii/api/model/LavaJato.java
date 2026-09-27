@@ -38,6 +38,20 @@ public class LavaJato extends Usuario {
     @Column(nullable = false, length = 9)
     private String cep;
 
+    /*
+     * org.locationtech.jts.geom.Point:
+     * O JTS (Java Topology Suite) é uma biblioteca padrão para trabalhar com geometria espacial em Java.
+     * Quando usamos a dependência 'hibernate-spatial', o Hibernate consegue mapear esses objetos
+     * espaciais do Java para tipos espaciais nativos do banco de dados (como o PostGIS no PostgreSQL).
+     * Um 'Point' representa um ponto exato no mapa, composto por uma Longitude (X) e uma Latitude (Y).
+     *
+     * columnDefinition = "geometry(Point, 4326)":
+     * - geometry: Indica ao banco de dados que a coluna armazenará dados espaciais.
+     * - Point: Restringe essa coluna para aceitar apenas pontos (não aceita polígonos, linhas, etc).
+     * - 4326: É o SRID (Spatial Reference System Identifier). O número 4326 representa o sistema
+     *   WGS 84, que é o padrão global utilizado por GPS, Google Maps e smartphones para
+     *   representar latitude e longitude na Terra.
+     */
     @Column(columnDefinition = "geometry(Point, 4326)", nullable = false)
     private Point coordenadas;
 }
