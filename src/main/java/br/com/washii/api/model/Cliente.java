@@ -16,6 +16,19 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+/*
+ * @EqualsAndHashCode(callSuper = true):
+ * Como a classe Cliente herda de Usuario (extends Usuario), o atributo 'callSuper = true'
+ * instrui o Lombok a chamar os métodos equals() e hashCode() da classe pai durante a geração.
+ *
+ * - O que isso significa na prática?
+ * Dois objetos da classe Cliente só serão considerados iguais se os seus próprios atributos
+ * (cpf, sobrenome, primeiroNome) E TAMBÉM os atributos herdados da classe Usuario (ex: id, email, etc.)
+ * forem exatamente iguais.
+ *
+ * Se fosse 'callSuper = false' (que é o padrão), o Lombok ignoraria a classe pai e compararia
+ * apenas os campos específicos da classe Cliente.
+ */
 @EqualsAndHashCode(callSuper = true)
 public class Cliente extends Usuario{
 
