@@ -22,6 +22,11 @@ public class Veiculo {
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    /*
+     * O parâmetro 'name' na anotação @JoinColumn refere-se ao nome da coluna
+     * física nesta tabela (veiculo). Embora a chave primária na tabela
+     * cliente se chame 'id_usuario', a FK aqui foi nomeada como 'id_cliente'.
+     */
     @JoinColumn(name = "id_cliente")
     private Cliente cliente;
 
