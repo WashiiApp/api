@@ -3,3 +3,15 @@ spring:
     name: api
   datasource:
     url: jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?user=postgres.usxgpdppfsifsokwiqly&password=Washii@2026
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: https://usxgpdppfsifsokwiqly.supabase.co/auth/v1/.well-known/jwks.json
+          issuer-uri: https://usxgpdppfsifsokwiqly.supabase.co/auth/v1
+logging:
+  level:
+    org:
+      springframework:
+        security: DEBUG
+        security.oauth2: DEBUG
