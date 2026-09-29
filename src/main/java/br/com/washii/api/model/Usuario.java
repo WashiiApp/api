@@ -37,6 +37,9 @@ public class Usuario implements Persistable<UUID> {
     @Column(nullable = false)
     private TipoUsuario tipoUsuario;
 
+    @Column(nullable = false, length = 100)
+    private String cidade;
+
     @Column(nullable = false, length = 2)
     private String estado;
 
@@ -45,7 +48,7 @@ public class Usuario implements Persistable<UUID> {
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "update_at")
+    @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
     @Transient

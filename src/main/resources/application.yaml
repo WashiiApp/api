@@ -9,9 +9,7 @@ spring:
         jwt:
           jwk-set-uri: https://usxgpdppfsifsokwiqly.supabase.co/auth/v1/.well-known/jwks.json
           issuer-uri: https://usxgpdppfsifsokwiqly.supabase.co/auth/v1
-logging:
-  level:
-    org:
-      springframework:
-        security: DEBUG
-        security.oauth2: DEBUG
+
+supabase:
+  url: https://usxgpdppfsifsokwiqly.supabase.co
+  public-key: sb_publishable_aIMNXTTA0LWU7WlxmeFhuQ_J9SwuOc8
