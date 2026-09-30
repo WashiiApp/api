@@ -133,7 +133,29 @@ public class AuthService {
                 4326
         );
 
-        return geometryFactory.createPoint(new Coordinate(longitude, latitude));
+        return geometryFactory.createPoint(
+                new Coordinate(longitude, latitude)
+        );
+    }
+
+    private UUID cadastrarUsuarioAuthProvider(String email, String senha) {
+        return authProvider.cadastrar(
+                email,
+                senha
+        );
+    }
+
+    private void reverterCriacaoUsuarioAuthProvider(UUID id) {
+        if (id == null) return;
+
+        try {
+            authProvider.excluir(id);
+        } catch (Exception rollbackException) {
+            System.err.println(
+                    "Falha ao excluir usuário do Supabase: "
+                            + rollbackException.getMessage()
+            );
+        }
     }
 
     public LoginResponse login(LoginRequest request) {

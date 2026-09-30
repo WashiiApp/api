@@ -67,16 +67,11 @@ public class SupabaseAuthProvider implements AuthProvider {
 
     @Override
     public void excluir(UUID id) {
-
-        System.out.println("EXCLUINDO USUÁRIO: " + id);
-
         restClient
                 .delete()
                 .uri(supabaseUrl + "/auth/v1/admin/users/" + id)
                 .header("apikey", secretKey)
                 .retrieve()
                 .toBodilessEntity();
-
-        System.out.println("USUÁRIO EXCLUÍDO");
     }
 }
