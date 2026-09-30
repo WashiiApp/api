@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.domain.Persistable;
 
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -14,14 +15,12 @@ import java.util.UUID;
 @Table(name = "usuario")
 @Inheritance(strategy = InheritanceType.JOINED)
 @Data
-@RequiredArgsConstructor
-@NoArgsConstructor
-@AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Usuario {
+// Necessário implementar Persistable<UUID> pois o UUID será gerado externamente
+// Para o jpa não achar que estamos fazendo uma operacão de update
+public class Usuario implements Persistable<UUID> {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @EqualsAndHashCode.Include
     private UUID id;
 
@@ -38,6 +37,9 @@ public class Usuario {
     @Column(nullable = false)
     private TipoUsuario tipoUsuario;
 
+    @Column(nullable = false, length = 100)
+    private String cidade;
+
     @Column(nullable = false, length = 2)
     private String estado;
 
@@ -46,8 +48,14 @@ public class Usuario {
     private OffsetDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "update_at")
+    @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
 
+    @Transient
+    private boolean novo = true;
 
+    @Override
+    public boolean isNew() {
+        return novo;
+    }
 }
