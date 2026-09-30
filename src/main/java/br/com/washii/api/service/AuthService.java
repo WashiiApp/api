@@ -27,6 +27,13 @@ public class AuthService {
     private final ClienteRepository clienteRepository;
     private final LavaJatoRepository lavaJatoRepository;
 
+    public LoginResponse login(LoginRequest request) {
+        return authProvider.autenticar(
+                request.email(),
+                request.senha()
+        );
+    }
+
     @Transactional
     public void cadastrarCliente(CadastroClienteRequest request) {
 
@@ -158,12 +165,6 @@ public class AuthService {
         }
     }
 
-    public LoginResponse login(LoginRequest request) {
-        return authProvider.autenticar(
-                request.email(),
-                request.senha()
-        );
-    }
 
     public void logout() {
     }
