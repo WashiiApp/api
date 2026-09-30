@@ -13,3 +13,4 @@ spring:
 supabase:
   url: https://usxgpdppfsifsokwiqly.supabase.co
   public-key: sb_publishable_aIMNXTTA0LWU7WlxmeFhuQ_J9SwuOc8
+  secret-key: ${SECRET_KEY}

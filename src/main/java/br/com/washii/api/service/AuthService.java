@@ -15,28 +15,46 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
     private final AuthProvider authProvider;
     private final ClienteRepository clienteRepository;
     private final LavaJatoRepository lavaJatoRepository;
 
-    public void cadastrarCliente(CadastroClienteRequest request){
-        UUID id = authProvider.cadastrar(
-                request.email(),
-                request.senha()
-        );
+    @Transactional
+    public void cadastrarCliente(CadastroClienteRequest request) {
 
-        Cliente cliente = criarCliente(id, request);
-        clienteRepository.save(cliente);
+        UUID id = null;
+
+        try {
+            id = cadastrarUsuarioAuthProvider(request.email(), request.senha());
+
+            Cliente cliente = criarCliente(id, request);
+
+            // Flush faz o commit imediatamente, o que garante que se houver algum
+            // erro, seja capturado no catch
+            clienteRepository.saveAndFlush(cliente);
+
+        } catch (Exception e) {
+
+            reverterCriacaoUsuarioAuthProvider(id);
+
+            throw e;
+        }
     }
 
-    private Cliente criarCliente(UUID id, CadastroClienteRequest request){
+    private Cliente criarCliente(
+            UUID id,
+            CadastroClienteRequest request
+    ) {
         Cliente cliente = new Cliente();
+
         cliente.setId(id);
         cliente.setAtivo(true);
         cliente.setEmail(request.email());
@@ -50,18 +68,35 @@ public class AuthService {
         return cliente;
     }
 
-    public void cadastrarLavaJato(CadastroLavaJatoRequest request){
-        UUID id = authProvider.cadastrar(
-                request.email(),
-                request.senha()
-        );
+    @Transactional
+    public void cadastrarLavaJato(CadastroLavaJatoRequest request) {
 
-        LavaJato lavaJato = criarLavaJato(id, request);
-        lavaJatoRepository.save(lavaJato);
+        UUID id = null;
+
+        try {
+            id = cadastrarUsuarioAuthProvider(request.email(), request.senha());
+
+            LavaJato lavaJato = criarLavaJato(id, request);
+
+            // Flush faz o commit imediatamente, o que garante que se houver algum
+            // erro, seja capturado no catch
+            lavaJatoRepository.saveAndFlush(lavaJato);
+
+        } catch (Exception e) {
+
+            reverterCriacaoUsuarioAuthProvider(id);
+
+            // Faz o rollback do PostgreSQL
+            throw e;
+        }
     }
 
-    private static LavaJato criarLavaJato(UUID id, CadastroLavaJatoRequest request) {
+    private static LavaJato criarLavaJato(
+            UUID id,
+            CadastroLavaJatoRequest request
+    ) {
         LavaJato lavaJato = new LavaJato();
+
         lavaJato.setId(id);
         lavaJato.setAtivo(true);
         lavaJato.setEmail(request.email());
@@ -72,7 +107,6 @@ public class AuthService {
         lavaJato.setLogradouro(request.logradouro());
         lavaJato.setNumero(request.numero());
         lavaJato.setCnpj(request.cnpj());
-        lavaJato.setCoordenadas(null);
         lavaJato.setFluxoSimultaneo(request.fluxoSimultaneo());
         lavaJato.setNomeFantasia(request.nomeFantasia());
         lavaJato.setRazaoSocial(request.razaoSocial());
@@ -90,7 +124,10 @@ public class AuthService {
         return lavaJato;
     }
 
-    private static Point converterCoordenadasParaPoint(Double longitude, Double latitude) {
+    private static Point converterCoordenadasParaPoint(
+            Double longitude,
+            Double latitude
+    ) {
         GeometryFactory geometryFactory = new GeometryFactory(
                 new PrecisionModel(),
                 4326
@@ -99,14 +136,13 @@ public class AuthService {
         return geometryFactory.createPoint(new Coordinate(longitude, latitude));
     }
 
-    public LoginResponse login(LoginRequest request){
+    public LoginResponse login(LoginRequest request) {
         return authProvider.autenticar(
                 request.email(),
                 request.senha()
         );
     }
 
-    public void logout(){
-
+    public void logout() {
     }
 }

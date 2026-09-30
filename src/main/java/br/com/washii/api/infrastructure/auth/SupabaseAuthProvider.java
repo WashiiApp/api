@@ -23,10 +23,14 @@ public class SupabaseAuthProvider implements AuthProvider {
     @Value("${supabase.public-key}")
     private String publicKey;
 
+    @Value("${supabase.secret-key}")
+    private String secretKey;
+
     @Override
     public UUID cadastrar(String email, String senha) {
 
-        SupabaseAuthRequest request = new SupabaseAuthRequest(email, senha);
+        SupabaseAuthRequest request =
+                new SupabaseAuthRequest(email, senha);
 
         SupabaseAuthResponse response = restClient
                 .post()
@@ -49,7 +53,8 @@ public class SupabaseAuthProvider implements AuthProvider {
     @Override
     public LoginResponse autenticar(String email, String senha) {
 
-        SupabaseAuthRequest request = new SupabaseAuthRequest(email, senha);
+        SupabaseAuthRequest request =
+                new SupabaseAuthRequest(email, senha);
 
         return restClient
                 .post()
@@ -58,5 +63,20 @@ public class SupabaseAuthProvider implements AuthProvider {
                 .body(request)
                 .retrieve()
                 .body(LoginResponse.class);
+    }
+
+    @Override
+    public void excluir(UUID id) {
+
+        System.out.println("EXCLUINDO USUÁRIO: " + id);
+
+        restClient
+                .delete()
+                .uri(supabaseUrl + "/auth/v1/admin/users/" + id)
+                .header("apikey", secretKey)
+                .retrieve()
+                .toBodilessEntity();
+
+        System.out.println("USUÁRIO EXCLUÍDO");
     }
 }
