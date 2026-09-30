@@ -52,6 +52,6 @@ public class LavaJato extends Usuario {
      *   WGS 84, que é o padrão global utilizado por GPS, Google Maps e smartphones para
      *   representar latitude e longitude na Terra.
      */
-    @Column(columnDefinition = "geometry(Point, 4326)", nullable = false)
+    @Column(columnDefinition = "geometry(Point, 4326)", nullable = true)
     private Point coordenadas;
 }

@@ -1,8 +1,6 @@
 package br.com.washii.api.controller;
 
-import br.com.washii.api.controller.dto.CadastroUsuarioRequest;
-import br.com.washii.api.controller.dto.LoginRequest;
-import br.com.washii.api.controller.dto.LoginResponse;
+import br.com.washii.api.controller.dto.*;
 import br.com.washii.api.model.Usuario;
 import br.com.washii.api.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +18,16 @@ public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/register")
-    public ResponseEntity<Void> cadastrar(@RequestBody CadastroUsuarioRequest request) {
-        authService.register(request);
+    @PostMapping("/register/cliente")
+    public ResponseEntity<Void> cadastrarCliente(@RequestBody CadastroClienteRequest request) {
+        authService.cadastrarCliente(request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/register/lava-jato")
+    public ResponseEntity<Void> cadastrarLavaJato(@RequestBody CadastroLavaJatoRequest request) {
+        authService.cadastrarLavaJato(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -36,6 +41,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Usuario> logout(@RequestBody Usuario user) {
+        //TODO
         return null;
     }
 }

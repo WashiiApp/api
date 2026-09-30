@@ -1,11 +1,18 @@
 package br.com.washii.api.service;
 
-import br.com.washii.api.controller.dto.CadastroUsuarioRequest;
-import br.com.washii.api.controller.dto.LoginRequest;
-import br.com.washii.api.controller.dto.LoginResponse;
+import br.com.washii.api.controller.dto.*;
+import br.com.washii.api.model.Cliente;
+import br.com.washii.api.model.LavaJato;
+import br.com.washii.api.model.TipoUsuario;
 import br.com.washii.api.model.Usuario;
+import br.com.washii.api.repository.ClienteRepository;
+import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
+import org.locationtech.jts.geom.Coordinate;
+import org.locationtech.jts.geom.GeometryFactory;
+import org.locationtech.jts.geom.Point;
+import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 
 import java.util.UUID;
@@ -14,23 +21,83 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthService {
     private final AuthProvider authProvider;
-    private final UsuarioRepository repository;
+    private final ClienteRepository clienteRepository;
+    private final LavaJatoRepository lavaJatoRepository;
 
-    public void register(CadastroUsuarioRequest request){
+    public void cadastrarCliente(CadastroClienteRequest request){
         UUID id = authProvider.cadastrar(
                 request.email(),
                 request.senha()
         );
 
-        Usuario user = new Usuario();
-        user.setId(id);
-        user.setAtivo(true);
-        user.setEmail(request.email());
-        user.setCidade(request.cidade());
-        user.setEstado(request.estado());
-        user.setTipoUsuario(request.tipoUsuario());
+        Cliente cliente = criarCliente(id, request);
+        clienteRepository.save(cliente);
+    }
 
-        repository.save(user);
+    private Cliente criarCliente(UUID id, CadastroClienteRequest request){
+        Cliente cliente = new Cliente();
+        cliente.setId(id);
+        cliente.setAtivo(true);
+        cliente.setEmail(request.email());
+        cliente.setCidade(request.cidade());
+        cliente.setEstado(request.estado());
+        cliente.setCpf(request.cpf());
+        cliente.setPrimeiroNome(request.nome());
+        cliente.setSobreNome(request.sobrenome());
+        cliente.setTipoUsuario(TipoUsuario.CLIENTE);
+
+        return cliente;
+    }
+
+    public void cadastrarLavaJato(CadastroLavaJatoRequest request){
+        UUID id = authProvider.cadastrar(
+                request.email(),
+                request.senha()
+        );
+
+        LavaJato lavaJato = criarLavaJato(id, request);
+        lavaJatoRepository.save(lavaJato);
+    }
+
+    private static LavaJato criarLavaJato(UUID id, CadastroLavaJatoRequest request) {
+        LavaJato lavaJato = new LavaJato();
+        lavaJato.setId(id);
+        lavaJato.setAtivo(true);
+        lavaJato.setEmail(request.email());
+        lavaJato.setCidade(request.cidade());
+        lavaJato.setEstado(request.estado());
+        lavaJato.setCep(request.cep());
+        lavaJato.setBairro(request.bairro());
+        lavaJato.setLogradouro(request.logradouro());
+        lavaJato.setNumero(request.numero());
+        lavaJato.setCnpj(request.cnpj());
+        lavaJato.setCoordenadas(null);
+        lavaJato.setFluxoSimultaneo(request.fluxoSimultaneo());
+        lavaJato.setNomeFantasia(request.nomeFantasia());
+        lavaJato.setRazaoSocial(request.razaoSocial());
+        lavaJato.setTipoUsuario(TipoUsuario.LAVA_JATO);
+
+        if (request.coordenadas() != null) {
+            Point point = converterCoordenadasParaPoint(
+                    request.coordenadas().longitude(),
+                    request.coordenadas().latitude()
+            );
+
+            lavaJato.setCoordenadas(point);
+        }
+
+        return lavaJato;
+    }
+
+    private static Point converterCoordenadasParaPoint(Double longitude, Double latitude) {
+        GeometryFactory geometryFactory = new GeometryFactory(
+                new PrecisionModel(),
+                4326
+        );
+
+        Point ponto = geometryFactory.createPoint(new Coordinate(longitude, latitude));
+
+        return ponto;
     }
 
     public LoginResponse login(LoginRequest request){
