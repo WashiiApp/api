@@ -36,6 +36,12 @@ public class SupabaseAuthProvider implements AuthProvider {
                 .retrieve()
                 .body(SupabaseAuthResponse.class);
 
+
+        /*
+         * Se por acaso ele for nulo, o programa interrompe a execução
+         *  imediatamente e lança um erro (uma AssertionError).
+         *  Isso serve para evitar que o código tente acessar algo que não existe.
+         * */
         assert response != null;
         return response.user().id();
     }
