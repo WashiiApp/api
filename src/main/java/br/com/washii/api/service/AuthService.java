@@ -1,13 +1,14 @@
 package br.com.washii.api.service;
 
-import br.com.washii.api.controller.dto.*;
+import br.com.washii.api.controller.dto.request.CadastroClienteRequest;
+import br.com.washii.api.controller.dto.request.CadastroLavaJatoRequest;
+import br.com.washii.api.controller.dto.request.LoginRequest;
+import br.com.washii.api.controller.dto.response.LoginResponse;
 import br.com.washii.api.model.Cliente;
 import br.com.washii.api.model.LavaJato;
 import br.com.washii.api.model.TipoUsuario;
-import br.com.washii.api.model.Usuario;
 import br.com.washii.api.repository.ClienteRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
-import br.com.washii.api.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;

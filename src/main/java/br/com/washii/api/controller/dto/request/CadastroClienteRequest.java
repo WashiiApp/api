@@ -1,4 +1,4 @@
-package br.com.washii.api.controller.dto;
+package br.com.washii.api.controller.dto.request;
 
 public record CadastroClienteRequest (
         String email,

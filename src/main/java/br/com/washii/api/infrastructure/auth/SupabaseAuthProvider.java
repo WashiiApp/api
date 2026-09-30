@@ -1,6 +1,6 @@
 package br.com.washii.api.infrastructure.auth;
 
-import br.com.washii.api.controller.dto.LoginResponse;
+import br.com.washii.api.controller.dto.response.LoginResponse;
 import br.com.washii.api.infrastructure.auth.dto.SupabaseAuthRequest;
 import br.com.washii.api.infrastructure.auth.dto.SupabaseAuthResponse;
 import br.com.washii.api.service.AuthProvider;

@@ -1,6 +1,9 @@
 package br.com.washii.api.controller;
 
-import br.com.washii.api.controller.dto.*;
+import br.com.washii.api.controller.dto.request.CadastroClienteRequest;
+import br.com.washii.api.controller.dto.request.CadastroLavaJatoRequest;
+import br.com.washii.api.controller.dto.request.LoginRequest;
+import br.com.washii.api.controller.dto.response.LoginResponse;
 import br.com.washii.api.model.Usuario;
 import br.com.washii.api.service.AuthService;
 import lombok.RequiredArgsConstructor;
