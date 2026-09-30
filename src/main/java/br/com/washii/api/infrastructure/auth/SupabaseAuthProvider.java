@@ -36,6 +36,7 @@ public class SupabaseAuthProvider implements AuthProvider {
                 .retrieve()
                 .body(SupabaseAuthResponse.class);
 
+        assert response != null;
         return response.user().id();
     }
 
