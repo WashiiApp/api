@@ -96,9 +96,7 @@ public class AuthService {
                 4326
         );
 
-        Point ponto = geometryFactory.createPoint(new Coordinate(longitude, latitude));
-
-        return ponto;
+        return geometryFactory.createPoint(new Coordinate(longitude, latitude));
     }
 
     public LoginResponse login(LoginRequest request){
