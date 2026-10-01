@@ -2,15 +2,15 @@ spring:
   application:
     name: api
   datasource:
-    url: jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?user=postgres.usxgpdppfsifsokwiqly&password=Washii@2026
+    url: jdbc:postgresql://aws-0-sa-east-1.pooler.supabase.com:5432/postgres?user=postgres.${USER}&password=${PASSWORD}
   security:
     oauth2:
       resourceserver:
         jwt:
-          jwk-set-uri: https://usxgpdppfsifsokwiqly.supabase.co/auth/v1/.well-known/jwks.json
-          issuer-uri: https://usxgpdppfsifsokwiqly.supabase.co/auth/v1
+          jwk-set-uri: https://${USER}.supabase.co/auth/v1/.well-known/jwks.json
+          issuer-uri: https://${USER}.supabase.co/auth/v1
 
 supabase:
-  url: https://usxgpdppfsifsokwiqly.supabase.co
+  url: https://${USER}.supabase.co
   public-key: sb_publishable_aIMNXTTA0LWU7WlxmeFhuQ_J9SwuOc8
   secret-key: ${SECRET_KEY}
