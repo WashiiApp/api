@@ -55,6 +55,14 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
     }
 
+    @ExceptionHandler(ExternalServiceException.class)
+    public StandardError handleExternalService(
+            ExternalServiceException exception,
+            HttpServletRequest request
+    ) {
+        return error(HttpStatus.BAD_GATEWAY, exception.getMessage(), request);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public StandardError handleMethodArgumentNotValid(
             MethodArgumentNotValidException exception,
@@ -129,19 +137,11 @@ public class GlobalExceptionHandler {
             RestClientResponseException exception,
             HttpServletRequest request
     ) {
-        HttpStatus status = switch (exception.getStatusCode().value()) {
-            case 400, 401 -> HttpStatus.UNAUTHORIZED;
-            case 409 -> HttpStatus.CONFLICT;
-            default -> HttpStatus.BAD_GATEWAY;
-        };
-
-        String message = status == HttpStatus.UNAUTHORIZED
-                ? "Credenciais inválidas ou não aceitas pelo provedor de autenticação."
-                : status == HttpStatus.CONFLICT
-                ? "Já existe um usuário com os dados informados."
-                : "O provedor de autenticação não pôde concluir a operação.";
-
-        return error(status, message, request);
+        return error(
+                HttpStatus.BAD_GATEWAY,
+                "O provedor externo não pôde concluir a operação.",
+                request
+        );
     }
 
     @ExceptionHandler(ResponseStatusException.class)
