@@ -46,7 +46,7 @@ public record CadastroLavaJatoRequest (
         @Size(max = 100, message = "O bairro deve ter no máximo 100 caracteres.")
         String bairro,
         @NotBlank(message = "O CEP é obrigatório.")
-        @Pattern(regexp = "(?:\\d{8}|\\d{5}-\\d{3})", message = "Informe um CEP com 8 dígitos, com ou sem hífen.")
+        @Pattern(regexp = "^(?:\\d{8}|\\d{5}-\\d{3})$", message = "Informe um CEP válido.")
         String cep,
         @Valid
         Coordenadas coordenadas
