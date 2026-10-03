@@ -3,6 +3,7 @@ package br.com.washii.api.model;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
@@ -14,6 +15,8 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+// Filtra automaticamente os veículos que não estão ativos
+@SQLRestriction("ativo = true")
 public class Veiculo {
 
     @Id

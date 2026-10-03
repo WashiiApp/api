@@ -1,15 +1,18 @@
 package br.com.washii.api.controller;
 
+import br.com.washii.api.controller.dto.VeiculoDTO;
 import br.com.washii.api.controller.dto.request.AtualizarClienteRequest;
 import br.com.washii.api.controller.dto.response.ClienteResponse;
 import br.com.washii.api.model.Cliente;
 import br.com.washii.api.service.ClienteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -34,6 +37,42 @@ public class ClienteController {
             @Valid @RequestBody AtualizarClienteRequest request
     ) {
         clienteService.atualizar(id, request);
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @PostMapping("/{clienteId}/veiculos")
+    public ResponseEntity<Void> adicionarVeiculo(
+            @PathVariable UUID clienteId,
+            @RequestBody VeiculoDTO request) {
+
+        clienteService.adicionarVeiculo(clienteId, request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @GetMapping("/{clienteId}/veiculos")
+    public ResponseEntity<List<VeiculoDTO>> listarVeiculos(@PathVariable UUID clienteId) {
+        return ResponseEntity.ok(clienteService.listarVeiculos(clienteId));
+    }
+
+    @PutMapping("/{clienteId}/veiculos/{veiculoId}")
+    public ResponseEntity<Void> atualizarVeiculo(
+            @PathVariable UUID clienteId,
+            @PathVariable UUID veiculoId,
+            @RequestBody VeiculoDTO request) {
+
+        clienteService.atualizarVeiculo(clienteId, veiculoId, request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{clienteId}/veiculos/{veiculoId}")
+    public ResponseEntity<Void> removerVeiculo(
+            @PathVariable UUID clienteId,
+            @PathVariable UUID veiculoId) {
+
+        clienteService.desativarVeiculo(clienteId, veiculoId);
         return ResponseEntity.noContent().build();
     }
 }
