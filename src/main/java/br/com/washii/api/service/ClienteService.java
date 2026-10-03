@@ -84,6 +84,8 @@ public class ClienteService {
         Veiculo veiculo = veiculoRepository.findById(veiculoId)
                 .orElseThrow(() -> new IllegalArgumentException("Não foi possível encontrar um veículo com o id = " + veiculoId));
 
+        if (!veiculoRepository.existsByIdAndCliente(veiculoId, cliente))
+            throw new IllegalArgumentException("Veículo não pertence ao cliente informado");
 
         veiculo.setAtivo(false);
 
