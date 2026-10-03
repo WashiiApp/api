@@ -6,6 +6,7 @@ import br.com.washii.api.controller.dto.request.LoginRequest;
 import br.com.washii.api.controller.dto.response.LoginResponse;
 import br.com.washii.api.model.Usuario;
 import br.com.washii.api.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -22,21 +23,21 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register/cliente")
-    public ResponseEntity<Void> cadastrarCliente(@RequestBody CadastroClienteRequest request) {
+    public ResponseEntity<Void> cadastrarCliente(@Valid @RequestBody CadastroClienteRequest request) {
         authService.cadastrarCliente(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/register/lava-jato")
-    public ResponseEntity<Void> cadastrarLavaJato(@RequestBody CadastroLavaJatoRequest request) {
+    public ResponseEntity<Void> cadastrarLavaJato(@Valid @RequestBody CadastroLavaJatoRequest request) {
         authService.cadastrarLavaJato(request);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
 
         return ResponseEntity.ok(response);
