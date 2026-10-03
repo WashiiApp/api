@@ -56,6 +56,17 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.listarVeiculos(clienteId));
     }
 
+    @PutMapping("/{clienteId}/veiculos/{veiculoId}")
+    public ResponseEntity<Void> atualizarVeiculo(
+            @PathVariable UUID clienteId,
+            @PathVariable UUID veiculoId,
+            @RequestBody VeiculoDTO request) {
+
+        clienteService.atualizarVeiculo(clienteId, veiculoId, request);
+
+        return ResponseEntity.noContent().build();
+    }
+
     @DeleteMapping("/{clienteId}/veiculos/{veiculoId}")
     public ResponseEntity<Void> removerVeiculo(
             @PathVariable UUID clienteId,

@@ -12,9 +12,9 @@ import br.com.washii.api.repository.ClienteRepository;
 import br.com.washii.api.repository.VeiculoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,19 +22,21 @@ import java.util.UUID;
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
-    private final VeiculoRepository  veiculoRepository;
+    private final VeiculoRepository veiculoRepository;
     private final CategoriaVeiculoRepository catVeiculoRepository;
 
+    @Transactional(readOnly = true)
     public ClienteResponse buscarPorId(UUID id) {
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + id));
 
         return ClienteResponse.from(cliente);
     }
 
+    @Transactional
     public ClienteResponse atualizar(UUID id, AtualizarClienteRequest clienteAtualizado) {
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + id));
 
         cliente.setCidade(clienteAtualizado.cidade());
         cliente.setEstado(clienteAtualizado.estado());
@@ -47,13 +49,13 @@ public class ClienteService {
         return ClienteResponse.from(cliente);
     }
 
+    @Transactional
     public void adicionarVeiculo(UUID clienteId, VeiculoDTO request) {
         Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new IllegalArgumentException("Não foi encontrado nenhum Cliente com o id = " + clienteId));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + clienteId));
 
         CategoriaVeiculo categoria = catVeiculoRepository.findByNome(request.categoria())
-                .orElseThrow(() -> new IllegalArgumentException("Categoria inválida"));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria de veículo não encontrada: " + request.categoria()));
 
         Veiculo veiculo = new Veiculo();
         veiculo.setCliente(cliente);
@@ -67,9 +69,10 @@ public class ClienteService {
         veiculoRepository.save(veiculo);
     }
 
+    @Transactional(readOnly = true)
     public List<VeiculoDTO> listarVeiculos(UUID clienteId) {
         Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new IllegalArgumentException("Não foi encontrado nenhum Cliente com o id = " + clienteId));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + clienteId));
 
         List<Veiculo> veiculos = veiculoRepository.findByCliente(cliente);
 
@@ -78,14 +81,41 @@ public class ClienteService {
                 .toList();
     }
 
+    @Transactional
+    public void atualizarVeiculo(UUID clienteId, UUID veiculoId, VeiculoDTO dto){
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + clienteId));
+
+        Veiculo veiculo = veiculoRepository.findById(veiculoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id = " + veiculoId));
+
+        if (!veiculoRepository.existsByIdAndCliente(veiculoId, cliente)) {
+            throw new IllegalArgumentException("Veículo não pertence ao cliente informado.");
+        }
+
+        CategoriaVeiculo categoria = catVeiculoRepository.findByNome(dto.categoria())
+                .orElseThrow(() -> new ResourceNotFoundException("Categoria de veículo não encontrada: " + dto.categoria()));
+
+        veiculo.setPlaca(dto.placa());
+        veiculo.setModelo(dto.modelo());
+        veiculo.setMarca(dto.marca());
+        veiculo.setCor(dto.cor());
+        veiculo.setCategoriaVeiculo(categoria);
+
+        veiculoRepository.save(veiculo);
+    }
+
+    @Transactional
     public void desativarVeiculo(UUID clienteId, UUID veiculoId) {
         Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new IllegalArgumentException("Não foi possível encontrar um cliente com o id = " + clienteId));
-        Veiculo veiculo = veiculoRepository.findById(veiculoId)
-                .orElseThrow(() -> new IllegalArgumentException("Não foi possível encontrar um veículo com o id = " + veiculoId));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + clienteId));
 
-        if (!veiculoRepository.existsByIdAndCliente(veiculoId, cliente))
-            throw new IllegalArgumentException("Veículo não pertence ao cliente informado");
+        Veiculo veiculo = veiculoRepository.findById(veiculoId)
+                .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id = " + veiculoId));
+
+        if (!veiculoRepository.existsByIdAndCliente(veiculoId, cliente)) {
+            throw new IllegalArgumentException("Veículo não pertence ao cliente informado.");
+        }
 
         veiculo.setAtivo(false);
 
