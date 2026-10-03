@@ -1,5 +1,6 @@
 package br.com.washii.api.service;
 
+import br.com.washii.api.controller.dto.VeiculoDTO;
 import br.com.washii.api.controller.dto.request.AtualizarClienteRequest;
 import br.com.washii.api.controller.dto.response.ClienteResponse;
 import br.com.washii.api.model.Cliente;
@@ -7,6 +8,7 @@ import br.com.washii.api.repository.ClienteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -35,5 +37,16 @@ public class ClienteService {
         clienteRepository.save(cliente);
 
         return ClienteResponse.from(cliente);
+    }
+
+    public VeiculoDTO adicionarVeiculo(UUID clienteId, VeiculoDTO request) {
+        return null;
+    }
+
+    public List<VeiculoDTO> listarVeiculos(UUID clienteId) {
+        return null;
+    }
+
+    public void desativarVeiculo(UUID clienteId, UUID veiculoId) {
     }
 }
