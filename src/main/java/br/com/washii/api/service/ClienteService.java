@@ -48,14 +48,12 @@ public class ClienteService {
     }
 
     public void adicionarVeiculo(UUID clienteId, VeiculoDTO request) {
-        Cliente cliente = clienteRepository.findById(clienteId).orElse(null);
-        CategoriaVeiculo categoria = catVeiculoRepository.findByNome(request.categoria()).orElse(null);
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new IllegalArgumentException("Não foi encontrado nenhum Cliente com o id = " + clienteId));
 
-        if (cliente == null)
-            throw new IllegalArgumentException("Não foi encontrado nenhum Cliente com o id = " + clienteId);
+        CategoriaVeiculo categoria = catVeiculoRepository.findByNome(request.categoria())
+                .orElseThrow(() -> new IllegalArgumentException("Categoria inválida"));
 
-        if (categoria == null)
-            throw new IllegalArgumentException("Categoria inválida");
 
         Veiculo veiculo = new Veiculo();
         veiculo.setCliente(cliente);
@@ -70,22 +68,22 @@ public class ClienteService {
     }
 
     public List<VeiculoDTO> listarVeiculos(UUID clienteId) {
-        Cliente cliente = clienteRepository.findById(clienteId).orElse(null);
-        if (cliente == null)
-            throw new IllegalArgumentException("Não foi encontrado nenhum Cliente com o id = " + clienteId);
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new IllegalArgumentException("Não foi encontrado nenhum Cliente com o id = " + clienteId));
 
-        List<Veiculo> veiculos = veiculoRepository.findByClienteAndAtivoTrue(cliente);
+        List<Veiculo> veiculos = veiculoRepository.findByCliente(cliente);
 
         return veiculos.stream()
                 .map(VeiculoDTO::from)
                 .toList();
     }
 
-    public void desativarVeiculo(UUID veiculoId) {
-        Veiculo veiculo = veiculoRepository.findById(veiculoId).orElse(null);
+    public void desativarVeiculo(UUID clienteId, UUID veiculoId) {
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new IllegalArgumentException("Não foi possível encontrar um cliente com o id = " + clienteId));
+        Veiculo veiculo = veiculoRepository.findById(veiculoId)
+                .orElseThrow(() -> new IllegalArgumentException("Não foi possível encontrar um veículo com o id = " + veiculoId));
 
-        if (veiculo == null)
-            throw new IllegalArgumentException("Não foi possível encontrar um veículo com o id = " + veiculoId);
 
         veiculo.setAtivo(false);
 
