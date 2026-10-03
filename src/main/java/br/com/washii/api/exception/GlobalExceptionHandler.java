@@ -105,6 +105,7 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request
     ) {
+        exception.printStackTrace();
         return error(HttpStatus.BAD_REQUEST, "A requisição contém dados ausentes ou inválidos.", request);
     }
 
@@ -162,6 +163,7 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request
     ) {
+        exception.printStackTrace();
         return error(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Ocorreu um erro interno inesperado.",

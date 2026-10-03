@@ -7,5 +7,5 @@ public record VeiculoDTO(
         String marca,
         String modelo,
         String cor,
-        CategoriaVeiculo categoria // MOTO, CARRO, SUV, PICKUP, etc.
+        String categoria // MOTO, CARRO, SUV, PICKUP, etc.
 ) {}

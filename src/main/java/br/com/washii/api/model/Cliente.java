@@ -1,14 +1,13 @@
 package br.com.washii.api.model;
 
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.PrimaryKeyJoinColumn;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Entity
 @Table(name = "cliente")
@@ -40,4 +39,7 @@ public class Cliente extends Usuario{
 
     @Column(name = "primeiro_nome", nullable = false, length = 100)
     private String primeiroNome;
+
+    @OneToMany(mappedBy = "cliente", fetch = FetchType.LAZY)
+    private List<Veiculo> veiculos;
 }

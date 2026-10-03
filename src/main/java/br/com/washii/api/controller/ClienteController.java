@@ -41,12 +41,13 @@ public class ClienteController {
 
 
     @PostMapping("/{clienteId}/veiculos")
-    public ResponseEntity<VeiculoDTO> adicionarVeiculo(
+    public ResponseEntity<Void> adicionarVeiculo(
             @PathVariable UUID clienteId,
             @RequestBody VeiculoDTO request) {
 
-        VeiculoDTO veiculo = clienteService.adicionarVeiculo(clienteId, request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(veiculo);
+        clienteService.adicionarVeiculo(clienteId, request);
+
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping("/{clienteId}/veiculos")
