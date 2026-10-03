@@ -70,7 +70,15 @@ public class ClienteService {
     }
 
     public List<VeiculoDTO> listarVeiculos(UUID clienteId) {
-        return null;
+        Cliente cliente = clienteRepository.findById(clienteId).orElse(null);
+        if (cliente == null)
+            throw new IllegalArgumentException("Não foi encontrado nenhum Cliente com o id = " + clienteId);
+
+        List<Veiculo> veiculos = veiculoRepository.findByCliente(cliente);
+
+        return veiculos.stream()
+                .map(VeiculoDTO::from)
+                .toList();
     }
 
     public void desativarVeiculo(UUID clienteId, UUID veiculoId) {
