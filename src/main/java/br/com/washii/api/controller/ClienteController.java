@@ -60,7 +60,7 @@ public class ClienteController {
             @PathVariable UUID clienteId,
             @PathVariable UUID veiculoId) {
 
-        clienteService.desativarVeiculo(clienteId, veiculoId);
+        clienteService.desativarVeiculo(veiculoId);
         return ResponseEntity.noContent().build();
     }
 }

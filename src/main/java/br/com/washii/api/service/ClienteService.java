@@ -74,13 +74,21 @@ public class ClienteService {
         if (cliente == null)
             throw new IllegalArgumentException("Não foi encontrado nenhum Cliente com o id = " + clienteId);
 
-        List<Veiculo> veiculos = veiculoRepository.findByCliente(cliente);
+        List<Veiculo> veiculos = veiculoRepository.findByClienteAndAtivoTrue(cliente);
 
         return veiculos.stream()
                 .map(VeiculoDTO::from)
                 .toList();
     }
 
-    public void desativarVeiculo(UUID clienteId, UUID veiculoId) {
+    public void desativarVeiculo(UUID veiculoId) {
+        Veiculo veiculo = veiculoRepository.findById(veiculoId).orElse(null);
+
+        if (veiculo == null)
+            throw new IllegalArgumentException("Não foi possível encontrar um veículo com o id = " + veiculoId);
+
+        veiculo.setAtivo(false);
+
+        veiculoRepository.save(veiculo);
     }
 }

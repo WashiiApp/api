@@ -8,5 +8,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface VeiculoRepository extends JpaRepository<Veiculo, UUID> {
-    List<Veiculo> findByCliente(Cliente cliente);
+    List<Veiculo> findByClienteAndAtivoTrue(Cliente cliente);
 }
