@@ -5,6 +5,7 @@ import br.com.washii.api.controller.dto.request.AtualizarClienteRequest;
 import br.com.washii.api.controller.dto.response.ClienteResponse;
 import br.com.washii.api.model.Cliente;
 import br.com.washii.api.service.ClienteService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +34,7 @@ public class ClienteController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> atualizar(
             @PathVariable UUID id,
-            @RequestBody AtualizarClienteRequest request
+            @Valid @RequestBody AtualizarClienteRequest request
     ) {
         clienteService.atualizar(id, request);
         return ResponseEntity.noContent().build();
