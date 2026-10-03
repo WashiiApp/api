@@ -2,6 +2,7 @@ package br.com.washii.api.service;
 
 import br.com.washii.api.controller.dto.request.AtualizarClienteRequest;
 import br.com.washii.api.controller.dto.response.ClienteResponse;
+import br.com.washii.api.exception.ResourceNotFoundException;
 import br.com.washii.api.model.Cliente;
 import br.com.washii.api.repository.ClienteRepository;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +18,14 @@ public class ClienteService {
 
     public ClienteResponse buscarPorId(UUID id) {
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
 
         return ClienteResponse.from(cliente);
     }
 
     public ClienteResponse atualizar(UUID id, AtualizarClienteRequest clienteAtualizado) {
         Cliente cliente = clienteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
 
         cliente.setCidade(clienteAtualizado.cidade());
         cliente.setEstado(clienteAtualizado.estado());
