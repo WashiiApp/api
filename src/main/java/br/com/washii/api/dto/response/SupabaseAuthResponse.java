@@ -1,4 +1,4 @@
-package br.com.washii.api.infrastructure.auth.dto;
+package br.com.washii.api.dto.response;
 
 import java.util.UUID;
 

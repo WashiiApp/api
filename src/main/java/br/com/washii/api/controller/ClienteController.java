@@ -1,15 +1,13 @@
 package br.com.washii.api.controller;
 
-import br.com.washii.api.controller.dto.VeiculoDTO;
-import br.com.washii.api.controller.dto.request.AtualizarClienteRequest;
-import br.com.washii.api.controller.dto.response.ClienteResponse;
-import br.com.washii.api.model.Cliente;
+import br.com.washii.api.dto.VeiculoDTO;
+import br.com.washii.api.dto.request.AtualizarClienteRequest;
+import br.com.washii.api.dto.response.ClienteResponse;
 import br.com.washii.api.service.ClienteService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

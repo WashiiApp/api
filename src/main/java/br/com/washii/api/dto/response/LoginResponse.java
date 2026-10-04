@@ -1,4 +1,4 @@
-package br.com.washii.api.controller.dto.response;
+package br.com.washii.api.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

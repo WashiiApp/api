@@ -1,6 +1,5 @@
-package br.com.washii.api.controller.dto;
+package br.com.washii.api.dto;
 
-import br.com.washii.api.model.CategoriaVeiculo;
 import br.com.washii.api.model.Veiculo;
 
 public record VeiculoDTO(

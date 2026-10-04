@@ -1,6 +1,6 @@
 package br.com.washii.api.service;
 
-import br.com.washii.api.controller.dto.response.LoginResponse;
+import br.com.washii.api.dto.response.LoginResponse;
 
 import java.util.UUID;
 
