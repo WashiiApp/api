@@ -1,4 +1,4 @@
-package br.com.washii.api.controller.dto.request;
+package br.com.washii.api.dto.request;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMax;

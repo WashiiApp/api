@@ -1,8 +1,8 @@
 package br.com.washii.api.service;
 
-import br.com.washii.api.controller.dto.VeiculoDTO;
-import br.com.washii.api.controller.dto.request.AtualizarClienteRequest;
-import br.com.washii.api.controller.dto.response.ClienteResponse;
+import br.com.washii.api.dto.VeiculoDTO;
+import br.com.washii.api.dto.request.AtualizarClienteRequest;
+import br.com.washii.api.dto.response.ClienteResponse;
 import br.com.washii.api.exception.ResourceNotFoundException;
 import br.com.washii.api.model.CategoriaVeiculo;
 import br.com.washii.api.model.Cliente;

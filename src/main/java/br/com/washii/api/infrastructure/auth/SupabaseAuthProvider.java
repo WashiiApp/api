@@ -1,12 +1,12 @@
 package br.com.washii.api.infrastructure.auth;
 
-import br.com.washii.api.controller.dto.response.LoginResponse;
+import br.com.washii.api.dto.response.LoginResponse;
 import br.com.washii.api.exception.BusinessException;
 import br.com.washii.api.exception.ExternalServiceException;
 import br.com.washii.api.exception.InvalidCredentialsException;
 import br.com.washii.api.exception.ValidationException;
-import br.com.washii.api.infrastructure.auth.dto.SupabaseAuthRequest;
-import br.com.washii.api.infrastructure.auth.dto.SupabaseAuthResponse;
+import br.com.washii.api.dto.request.SupabaseAuthRequest;
+import br.com.washii.api.dto.response.SupabaseAuthResponse;
 import br.com.washii.api.service.AuthProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

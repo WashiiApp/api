@@ -1,4 +1,4 @@
-package br.com.washii.api.controller.dto.response;
+package br.com.washii.api.dto.response;
 
 import br.com.washii.api.model.Cliente;
 import br.com.washii.api.model.TipoUsuario;
