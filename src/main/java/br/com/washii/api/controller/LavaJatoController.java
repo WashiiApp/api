@@ -13,6 +13,8 @@ public class LavaJatoController {
     public void buscar(){}
 
     // Expediente
+    @GetMapping("/expedientes")
+    public void buscarPOrID(int id) {}
 
     // Serviços
 
