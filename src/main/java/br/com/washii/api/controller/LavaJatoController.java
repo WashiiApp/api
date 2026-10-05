@@ -34,8 +34,12 @@ public class LavaJatoController {
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping
-    public void excluir(){}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deletar(@PathVariable UUID id){
+        lavaJatoService.deletar(id);
+
+        return ResponseEntity.noContent().build();
+    }
 
     // Expediente
 

@@ -61,6 +61,15 @@ public class LavaJatoService {
         lavaJatoRepository.save(lavaJato);
     }
 
+    public void deletar(UUID id) {
+        LavaJato lavaJato = lavaJatoRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
+
+        lavaJato.setAtivo(false);
+
+        lavaJatoRepository.save(lavaJato);
+    }
+
     // Expediente
 
 
