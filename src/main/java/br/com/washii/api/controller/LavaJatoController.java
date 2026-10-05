@@ -10,15 +10,9 @@ public class LavaJatoController {
 
     // Gestão cadastral do sistema
     @GetMapping
-    public void buscar(){
-
-    }
+    public void buscar(){}
 
     // Expediente
-    public int somar(int a, int b) {
-        return  a + b;
-    }
-
 
     // Serviços
 
