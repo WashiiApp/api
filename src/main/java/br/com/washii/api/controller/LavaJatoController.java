@@ -1,5 +1,6 @@
 package br.com.washii.api.controller;
 
+import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
 import br.com.washii.api.dto.response.LavaJatoResponse;
 import br.com.washii.api.service.LavaJatoService;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +24,15 @@ public class LavaJatoController {
         return ResponseEntity.ok(lavaJatoResponse);
     }
 
-    @PutMapping
-    public void atualizar(){}
+    @PutMapping("/{id}")
+    public ResponseEntity<Void> atualizar(
+            @PathVariable UUID id,
+            @RequestBody AtualizacaoLavaJatoRequest request)
+    {
+        lavaJatoService.atualizar(id, request);
+
+        return ResponseEntity.noContent().build();
+    }
 
     @DeleteMapping
     public void excluir(){}
