@@ -32,6 +32,7 @@ public class LavaJatoService {
     private final DiasSemanaRepository diasSemanaRepository;
 
     // Gestão cadastral do sistema
+    @Transactional
     public LavaJatoResponse buscarPorId(UUID id){
         LavaJato lavaJato = lavaJatoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
@@ -66,12 +67,14 @@ public class LavaJatoService {
                     new Coordinate(request.longitude(), request.latitude())
             );
 
-            lavaJato.getCoordenadas().getCoordinate().setCoordinate(point.getCoordinate());
+            // Atribui a nova instância diretamente à entidade
+            lavaJato.setCoordenadas(point);
         }
 
         lavaJatoRepository.save(lavaJato);
     }
 
+    @Transactional
     public void deletar(UUID id) {
         LavaJato lavaJato = lavaJatoRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
