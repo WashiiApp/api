@@ -3,6 +3,7 @@ package br.com.washii.api.controller;
 import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
 import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
+import br.com.washii.api.dto.response.CategoriaVeiculoServicoResponse;
 import br.com.washii.api.dto.response.LavaJatoResponse;
 import br.com.washii.api.dto.request.ExpedienteRequest;
 import br.com.washii.api.dto.response.ExpedienteResponse;
@@ -148,24 +149,25 @@ public class LavaJatoController {
         return ResponseEntity.noContent().build();
     }
 
-//    @PutMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
-//    public ResponseEntity<Void> customizarServico(
-//            @PathVariable UUID lavaJatoId,
-//            @PathVariable UUID servicoId,
-//            @PathVariable UUID precoId,
-//            @RequestBody CategoriaVeiculoServicoRequest request
-//    ){
-//
-//    }
-//
-//    @DeleteMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
-//    public ResponseEntity<CategoriaVeiculoServicoResponse> buscarPorCustomizacoes(
-//            @PathVariable UUID lavaJatoId,
-//            @PathVariable UUID servicoId,
-//            @PathVariable UUID precoId
-//    ){
-//
-//    }
+    @PutMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
+    public ResponseEntity<Void> customizarServico(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId,
+            @PathVariable UUID precoId,
+            @RequestBody CategoriaVeiculoServicoRequest request
+    ){
+        servicoService.atulizarCustomizacao(lavaJatoId, servicoId, precoId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
+    public ResponseEntity<CategoriaVeiculoServicoResponse> buscarPorCustomizacoes(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId,
+            @PathVariable UUID precoId
+    ){
+        servicoService.deletarCustomizacao(lavaJatoId, servicoId, precoId);
+    }
 
 
 

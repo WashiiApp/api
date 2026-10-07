@@ -127,4 +127,53 @@ public class ServicoService {
 
         catVeiculoServicoRepository.saveAll(listCustom);
     }
+
+    public void atulizarCustomizacao(UUID lavaJatoId, UUID servicoId, UUID precoId, CategoriaVeiculoServicoRequest request) {
+        LavaJato lavaJato = lavaJatoRepository.findById(lavaJatoId)
+                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
+
+        Servico servico = servicoRepository.findById(servicoId)
+                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado com o id = " + servicoId));
+
+        if (!servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato)) {
+            throw new IllegalArgumentException("O serviço não pertence ao lava jato informado");
+        }
+
+        CategoriaVeiculoServico customServico = catVeiculoServicoRepository.findById(precoId)
+                .orElseThrow(() -> new IllegalArgumentException("Customização de preço não encontrada com o id = " + precoId));
+
+        if (!customServico.getServico().getId().equals(servicoId)) {
+            throw new IllegalArgumentException("A customização informada não pertence ao serviço especificado");
+        }
+
+        CategoriaVeiculo catVeiculo = catVeiculoRepository.findById(request.categoriaVeiculoId())
+                .orElseThrow(() -> new IllegalArgumentException("Categoria de veículo não encontrada com o id = " + request.categoriaVeiculoId()));
+
+        customServico.setCategoriaVeiculo(catVeiculo);
+        customServico.setDuracao(request.duracao());
+        customServico.setPreco(request.preco());
+
+        catVeiculoServicoRepository.save(customServico);
+    }
+
+    public void deletarCustomizacao(UUID lavaJatoId, UUID servicoId, UUID precoId) {
+        LavaJato lavaJato = lavaJatoRepository.findById(lavaJatoId)
+                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
+
+        Servico servico = servicoRepository.findById(servicoId)
+                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado com o id = " + servicoId));
+
+        if (!servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato)) {
+            throw new IllegalArgumentException("O serviço não pertence ao lava jato informado");
+        }
+
+        CategoriaVeiculoServico customServico = catVeiculoServicoRepository.findById(precoId)
+                .orElseThrow(() -> new IllegalArgumentException("Customização de preço não encontrada com o id = " + precoId));
+
+        if (!customServico.getServico().getId().equals(servicoId)) {
+            throw new IllegalArgumentException("A customização informada não pertence ao serviço especificado");
+        }
+
+        catVeiculoServicoRepository.delete(customServico);
+    }
 }
