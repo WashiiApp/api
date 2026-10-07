@@ -133,6 +133,7 @@ public class LavaJatoController {
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId
     ){
+        servicoService.deletarServico(lavaJatoId, servicoId);
         return ResponseEntity.noContent().build();
     }
 

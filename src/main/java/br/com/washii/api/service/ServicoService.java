@@ -80,4 +80,20 @@ public class ServicoService {
 
         servicoRepository.save(servico);
     }
+
+    public void deletarServico(UUID lavaJatoId, UUID servicoId) {
+        LavaJato lavaJato = lavaJatoRepository.findById(lavaJatoId)
+                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
+
+        Servico servico = servicoRepository.findById(servicoId)
+                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado com o id = " + servicoId));
+
+        if (!servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato)){
+            throw new IllegalArgumentException("O serviço não pertence ao lava jato informado");
+        }
+
+        servico.setAtivo(false);
+
+        servicoRepository.save(servico);
+    }
 }
