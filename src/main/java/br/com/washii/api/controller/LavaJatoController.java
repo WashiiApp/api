@@ -119,11 +119,12 @@ public class LavaJatoController {
     }
 
     @PutMapping("/{lavaJatoId}/servicos/{servicoId}")
-    public ResponseEntity<ServicoResponse> buscarPorId(
+    public ResponseEntity<Void> buscarPorId(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
             @RequestBody CadastroServicoRequest request)
     {
+        servicoService.atualizarServico(lavaJatoId, servicoId, request);
         return ResponseEntity.noContent().build();
     }
 

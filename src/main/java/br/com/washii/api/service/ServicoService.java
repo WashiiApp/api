@@ -59,4 +59,25 @@ public class ServicoService {
 
         return servico;
     }
+
+    public void atualizarServico(UUID lavaJatoId, UUID servicoId, CadastroServicoRequest request) {
+        CategoriaServico categoria = catServicoRepository.findById(request.categoriaServicoId())
+                .orElseThrow(() -> new IllegalArgumentException("Categoria de veículo não encontrada com o id = " + request.categoriaServicoId()));
+
+        LavaJato lavaJato = lavaJatoRepository.findById(lavaJatoId)
+                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
+
+        Servico servico = servicoRepository.findById(servicoId)
+                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado com o id = " + servicoId));
+
+        if (!servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato)){
+            throw new IllegalArgumentException("O serviço não pertence ao lava jato informado");
+        }
+
+        servico.setCategoriaServico(categoria);
+        servico.setNome(request.nome());
+        servico.setDescricao(request.descricao());
+
+        servicoRepository.save(servico);
+    }
 }
