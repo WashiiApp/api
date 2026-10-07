@@ -1,10 +1,15 @@
 package br.com.washii.api.controller;
 
 import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
+import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.response.LavaJatoResponse;
 import br.com.washii.api.dto.request.ExpedienteRequest;
 import br.com.washii.api.dto.response.ExpedienteResponse;
+import br.com.washii.api.dto.response.ServicoResponse;
+import br.com.washii.api.model.Servico;
+import br.com.washii.api.repository.ServicoRepository;
 import br.com.washii.api.service.LavaJatoService;
+import br.com.washii.api.service.ServicoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,6 +25,7 @@ import java.util.UUID;
 public class LavaJatoController {
 
     private final LavaJatoService lavaJatoService;
+    private final ServicoService servicoService;
 
     // Gestão cadastral do sistema
     @GetMapping("/{id}")
@@ -81,6 +87,93 @@ public class LavaJatoController {
     }
 
     // Serviços
+    @PostMapping("/{lavaJatoId}/servicos")
+    public ResponseEntity<Void> salvarServico(
+            @PathVariable UUID lavaJatoId,
+            @RequestBody CadastroServicoRequest request)
+    {
+        servicoService.salvarServico(lavaJatoId, request);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{lavaJatoId}/servicos")
+    public ResponseEntity<List<ServicoResponse>> buscarServicos(@PathVariable UUID lavaJatoId){
+        List<Servico> servicos = servicoService.buscarServicosPorLavaJato(lavaJatoId);
+
+        List<ServicoResponse> servicosDTO = servicos.stream()
+                .map(ServicoResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(servicosDTO);
+    }
+
+    @GetMapping("/{lavaJatoId}/servicos/{servicoId}")
+    public ResponseEntity<ServicoResponse> buscarPorId(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId)
+    {
+        Servico servico = servicoService.buscarPorId(lavaJatoId, servicoId);
+
+        return ResponseEntity.ok(ServicoResponse.fromEntity(servico));
+    }
+
+    @PutMapping("/{lavaJatoId}/servicos/{servicoId}")
+    public ResponseEntity<Void> buscarPorId(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId,
+            @RequestBody CadastroServicoRequest request)
+    {
+        servicoService.atualizarServico(lavaJatoId, servicoId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{lavaJatoId}/servicos/{servicoId}")
+    public ResponseEntity<Void> deletar(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId
+    ){
+        servicoService.deletarServico(lavaJatoId, servicoId);
+        return ResponseEntity.noContent().build();
+    }
+
+//    @GetMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
+//    public ResponseEntity<CategoriaVeiculoServicoResponse> buscarPorCustomizacoes(
+//            @PathVariable UUID lavaJatoId,
+//            @PathVariable UUID servicoId,
+//            @PathVariable UUID precoId
+//    ){
+//
+//    }
+//
+//    @PostMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
+//    public ResponseEntity<Void> customizarServico(
+//            @PathVariable UUID lavaJatoId,
+//            @PathVariable UUID servicoId,
+//            @RequestBody CategoriaVeiculoServicoRequest request
+//    ){
+//
+//    }
+//
+//    @PutMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
+//    public ResponseEntity<Void> customizarServico(
+//            @PathVariable UUID lavaJatoId,
+//            @PathVariable UUID servicoId,
+//            @PathVariable UUID precoId,
+//            @RequestBody CategoriaVeiculoServicoRequest request
+//    ){
+//
+//    }
+//
+//    @DeleteMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
+//    public ResponseEntity<CategoriaVeiculoServicoResponse> buscarPorCustomizacoes(
+//            @PathVariable UUID lavaJatoId,
+//            @PathVariable UUID servicoId,
+//            @PathVariable UUID precoId
+//    ){
+//
+//    }
+
 
 
     // Operacionais e Consultas
