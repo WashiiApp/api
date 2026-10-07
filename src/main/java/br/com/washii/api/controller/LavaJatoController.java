@@ -3,13 +3,12 @@ package br.com.washii.api.controller;
 import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
 import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
-import br.com.washii.api.dto.response.CategoriaVeiculoServicoResponse;
-import br.com.washii.api.dto.response.LavaJatoResponse;
 import br.com.washii.api.dto.request.ExpedienteRequest;
+import br.com.washii.api.dto.response.CategoriaVeiculoServicoResponse;
 import br.com.washii.api.dto.response.ExpedienteResponse;
+import br.com.washii.api.dto.response.LavaJatoResponse;
 import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.Servico;
-import br.com.washii.api.repository.ServicoRepository;
 import br.com.washii.api.service.LavaJatoService;
 import br.com.washii.api.service.ServicoService;
 import jakarta.validation.Valid;
@@ -156,7 +155,7 @@ public class LavaJatoController {
             @PathVariable UUID precoId,
             @RequestBody CategoriaVeiculoServicoRequest request
     ){
-        servicoService.atulizarCustomizacao(lavaJatoId, servicoId, precoId, request);
+        servicoService.atualizarCustomizacao(lavaJatoId, servicoId, precoId, request);
         return ResponseEntity.noContent().build();
     }
 
@@ -167,9 +166,8 @@ public class LavaJatoController {
             @PathVariable UUID precoId
     ){
         servicoService.deletarCustomizacao(lavaJatoId, servicoId, precoId);
+        return ResponseEntity.noContent().build();
     }
-
-
 
     // Operacionais e Consultas
 
