@@ -5,7 +5,6 @@ import br.com.washii.api.model.CategoriaServico;
 import br.com.washii.api.model.LavaJato;
 import br.com.washii.api.model.Servico;
 import br.com.washii.api.repository.CategoriaServicoRepository;
-import br.com.washii.api.repository.CategoriaVeiculoRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.ServicoRepository;
 import lombok.RequiredArgsConstructor;
@@ -45,5 +44,19 @@ public class ServicoService {
                 .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
 
         return servicoRepository.findAllByLavaJato(lavaJato);
+    }
+
+    public Servico buscarPorId(UUID lavaJatoId, UUID servicoId) {
+        LavaJato lavaJato = lavaJatoRepository.findById(lavaJatoId)
+                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
+
+        Servico servico = servicoRepository.findById(servicoId)
+                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado com o id = " + servicoId));
+
+        if (!servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato)){
+            throw new IllegalArgumentException("O serviço não pertence ao lava jato informado");
+        }
+
+        return servico;
     }
 }

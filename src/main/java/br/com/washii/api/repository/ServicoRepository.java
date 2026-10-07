@@ -9,4 +9,5 @@ import java.util.UUID;
 
 public interface ServicoRepository extends JpaRepository<Servico, UUID> {
     List<Servico> findAllByLavaJato(LavaJato lavaJato);
+    Boolean existsByIdAndLavaJato(UUID id, LavaJato lavaJato);
 }

@@ -7,6 +7,7 @@ import br.com.washii.api.dto.request.ExpedienteRequest;
 import br.com.washii.api.dto.response.ExpedienteResponse;
 import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.Servico;
+import br.com.washii.api.repository.ServicoRepository;
 import br.com.washii.api.service.LavaJatoService;
 import br.com.washii.api.service.ServicoService;
 import jakarta.validation.Valid;
@@ -112,7 +113,9 @@ public class LavaJatoController {
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId)
     {
-        return ResponseEntity.noContent().build();
+        Servico servico = servicoService.buscarPorId(lavaJatoId, servicoId);
+
+        return ResponseEntity.ok(ServicoResponse.fromEntity(servico));
     }
 
     @PutMapping("/{lavaJatoId}/servicos/{servicoId}")
