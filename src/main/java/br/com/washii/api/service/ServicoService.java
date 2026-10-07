@@ -1,12 +1,9 @@
 package br.com.washii.api.service;
 
 import br.com.washii.api.dto.request.CadastroServicoRequest;
-import br.com.washii.api.model.CategoriaServico;
-import br.com.washii.api.model.LavaJato;
-import br.com.washii.api.model.Servico;
-import br.com.washii.api.repository.CategoriaServicoRepository;
-import br.com.washii.api.repository.LavaJatoRepository;
-import br.com.washii.api.repository.ServicoRepository;
+import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
+import br.com.washii.api.model.*;
+import br.com.washii.api.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -19,6 +16,8 @@ public class ServicoService {
 
     private final ServicoRepository servicoRepository;
     private final CategoriaServicoRepository catServicoRepository;
+    private final CategoriaVeiculoRepository catVeiculoRepository;
+    private final CategoriaVeiculoServicoRepository catVeiculoServicoRepository;
     private final LavaJatoRepository lavaJatoRepository;
 
     public void salvarServico(UUID lavaJatoId, CadastroServicoRequest request){
@@ -95,5 +94,37 @@ public class ServicoService {
         servico.setAtivo(false);
 
         servicoRepository.save(servico);
+    }
+
+    public void customizarServicoPorCategoriaServico(
+            UUID lavaJatoId, UUID servicoId, List<CategoriaVeiculoServicoRequest> requestList
+    ) {
+        LavaJato lavaJato = lavaJatoRepository.findById(lavaJatoId)
+                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
+
+        Servico servico = servicoRepository.findById(servicoId)
+                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado com o id = " + servicoId));
+
+        if (!servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato)){
+            throw new IllegalArgumentException("O serviço não pertence ao lava jato informado");
+        }
+
+        List<CategoriaVeiculoServico> listCustom = requestList.stream()
+                .map(request -> {
+                    CategoriaVeiculo catVeiculo = catVeiculoRepository.findById(request.categoriaVeiculoId())
+                            .orElseThrow(() ->
+                                    new IllegalArgumentException("Categoria de veículo não encontrada com o id = " + request.categoriaVeiculoId()));
+
+                    CategoriaVeiculoServico customServico = new CategoriaVeiculoServico();
+                    customServico.setCategoriaVeiculo(catVeiculo);
+                    customServico.setDuracao(request.duracao());
+                    customServico.setPreco(request.preco());
+                    customServico.setServico(servico);
+
+                    return customServico;
+                })
+                .toList();
+
+        catVeiculoServicoRepository.saveAll(listCustom);
     }
 }
