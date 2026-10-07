@@ -41,6 +41,9 @@ public class ServicoService {
     }
 
     public List<Servico> buscarServicosPorLavaJato(UUID lavaJatoId) {
-        return List.of();
+        LavaJato lavaJato = lavaJatoRepository.findById(lavaJatoId)
+                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
+
+        return servicoRepository.findAllByLavaJato(lavaJato);
     }
 }
