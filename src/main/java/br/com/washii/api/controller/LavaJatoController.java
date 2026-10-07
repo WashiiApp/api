@@ -2,20 +2,16 @@ package br.com.washii.api.controller;
 
 import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
 import br.com.washii.api.dto.request.CadastroServicoRequest;
-import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
-import br.com.washii.api.dto.response.CategoriaVeiculoServicoResponse;
 import br.com.washii.api.dto.response.LavaJatoResponse;
 import br.com.washii.api.dto.request.ExpedienteRequest;
 import br.com.washii.api.dto.response.ExpedienteResponse;
 import br.com.washii.api.dto.response.ServicoResponse;
-import br.com.washii.api.model.CategoriaVeiculoServico;
 import br.com.washii.api.model.Servico;
 import br.com.washii.api.service.LavaJatoService;
 import br.com.washii.api.service.ServicoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -136,42 +132,42 @@ public class LavaJatoController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
-    public ResponseEntity<CategoriaVeiculoServicoResponse> buscarPorCustomizacoes(
-            @PathVariable UUID lavaJatoId,
-            @PathVariable UUID servicoId,
-            @PathVariable UUID precoId
-    ){
-
-    }
-
-    @PostMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
-    public ResponseEntity<Void> customizarServico(
-            @PathVariable UUID lavaJatoId,
-            @PathVariable UUID servicoId,
-            @RequestBody CategoriaVeiculoServicoRequest request
-    ){
-
-    }
-
-    @PutMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
-    public ResponseEntity<Void> customizarServico(
-            @PathVariable UUID lavaJatoId,
-            @PathVariable UUID servicoId,
-            @PathVariable UUID precoId,
-            @RequestBody CategoriaVeiculoServicoRequest request
-    ){
-
-    }
-
-    @DeleteMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
-    public ResponseEntity<CategoriaVeiculoServicoResponse> buscarPorCustomizacoes(
-            @PathVariable UUID lavaJatoId,
-            @PathVariable UUID servicoId,
-            @PathVariable UUID precoId
-    ){
-
-    }
+//    @GetMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
+//    public ResponseEntity<CategoriaVeiculoServicoResponse> buscarPorCustomizacoes(
+//            @PathVariable UUID lavaJatoId,
+//            @PathVariable UUID servicoId,
+//            @PathVariable UUID precoId
+//    ){
+//
+//    }
+//
+//    @PostMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
+//    public ResponseEntity<Void> customizarServico(
+//            @PathVariable UUID lavaJatoId,
+//            @PathVariable UUID servicoId,
+//            @RequestBody CategoriaVeiculoServicoRequest request
+//    ){
+//
+//    }
+//
+//    @PutMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
+//    public ResponseEntity<Void> customizarServico(
+//            @PathVariable UUID lavaJatoId,
+//            @PathVariable UUID servicoId,
+//            @PathVariable UUID precoId,
+//            @RequestBody CategoriaVeiculoServicoRequest request
+//    ){
+//
+//    }
+//
+//    @DeleteMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
+//    public ResponseEntity<CategoriaVeiculoServicoResponse> buscarPorCustomizacoes(
+//            @PathVariable UUID lavaJatoId,
+//            @PathVariable UUID servicoId,
+//            @PathVariable UUID precoId
+//    ){
+//
+//    }
 
 
 
