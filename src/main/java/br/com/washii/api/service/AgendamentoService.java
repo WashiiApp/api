@@ -24,7 +24,7 @@ public class AgendamentoService {
     private final ClienteRepository clienteRepository;
     private final LavaJatoRepository lavaJatoRepository;
     private final VeiculoRepository veiculoRepository;
-    private final br.com.washii.api.repository.ServicoRepository servicoRepository;
+    private final ServicoRepository servicoRepository;
     private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
 
     @Transactional
