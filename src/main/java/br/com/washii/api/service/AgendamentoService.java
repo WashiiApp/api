@@ -38,7 +38,8 @@ public class AgendamentoService {
         if (!veiculo.getCliente().getId().equals(clienteId)) {
             throw new ValidationException("O veículo informado não pertence ao cliente autenticado.");
         }
-        if (request.data().atTime(request.hora()).isBefore(LocalDateTime.now())) {
+
+        if (request.data().atTime(request.hora()).isBefore(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")))) {
             throw new ValidationException("A data e hora do agendamento devem ser futuras.");
         }
         if (new HashSet<>(request.servicoIds()).size() != request.servicoIds().size()) {
