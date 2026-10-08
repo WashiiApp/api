@@ -122,6 +122,7 @@ public class GlobalExceptionHandler {
             NoResourceFoundException exception,
             HttpServletRequest request
     ) {
+        exception.printStackTrace();
         return error(HttpStatus.NOT_FOUND, "Endpoint não encontrado.", request);
     }
 
@@ -130,6 +131,7 @@ public class GlobalExceptionHandler {
             DataIntegrityViolationException exception,
             HttpServletRequest request
     ) {
+        exception.printStackTrace();
         return error(HttpStatus.CONFLICT, "A operação viola uma regra de integridade dos dados.", request);
     }
 
