@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Service
@@ -29,19 +30,26 @@ public class AgendamentoService {
 
     @Transactional
     public Agendamento criar(UUID clienteId, AgendamentoRequest request) {
+
         clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
+
         LavaJato lavaJato = lavaJatoRepository.findById(request.lavaJatoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Lava-jato não encontrado."));
+
         Veiculo veiculo = veiculoRepository.findById(request.veiculoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado."));
-        if (!veiculo.getCliente().getId().equals(clienteId)) {
+
+        UUID cliente = veiculo.getCliente().getId();
+
+        if (cliente == null || !cliente.equals(clienteId)) {
             throw new ValidationException("O veículo informado não pertence ao cliente autenticado.");
         }
 
         if (request.data().atTime(request.hora()).isBefore(LocalDateTime.now(ZoneId.of("America/Sao_Paulo")))) {
             throw new ValidationException("A data e hora do agendamento devem ser futuras.");
         }
+
         if (new HashSet<>(request.servicoIds()).size() != request.servicoIds().size()) {
             throw new ValidationException("Não é permitido informar serviços duplicados.");
         }
@@ -53,8 +61,13 @@ public class AgendamentoService {
         BigDecimal total = BigDecimal.ZERO;
         long duracaoMinutos = 0;
         for (Servico servico : servicos) {
-            if (!servico.isAtivo() || !servico.getLavaJato().getId().equals(lavaJato.getId())) {
-                throw new ValidationException("Todos os serviços devem estar ativos e pertencer ao lava-jato informado.");
+
+            if (!servico.isAtivo()) {
+                throw new ValidationException("O serviço informado está inativo.");
+            }
+
+            if (servico.getLavaJato() == null) {
+                throw new ValidationException("O serviço não possui um lava-jato associado.");
             }
 
             if (!Objects.equals(servico.getLavaJato().getId(), lavaJato.getId())) {
@@ -75,10 +88,14 @@ public class AgendamentoService {
 
         LocalDateTime inicio = request.data().atTime(request.hora());
         LocalDateTime fim = inicio.plusMinutes(duracaoMinutos);
+
         List<UUID> idsAtivos = agendamentoRepository.findAtivosDoLavaJatoNaData(
                 lavaJato.getId(), request.data(), StatusAgendamento.AGENDADO.name());
+
         List<Agendamento> ativos = agendamentoRepository.findAllById(idsAtivos);
+
         long simultaneos = ativos.stream().filter(a -> sobrepoe(inicio, fim, a)).count();
+
         if (simultaneos >= lavaJato.getFluxoSimultaneo()) {
             throw new BusinessException("Não há capacidade disponível para o horário solicitado.");
         }
@@ -111,7 +128,10 @@ public class AgendamentoService {
     @Transactional
     public void cancelarPeloCliente(UUID agendamentoId, UUID clienteId) {
         Agendamento agendamento = buscar(agendamentoId);
-        if (!agendamento.getVeiculo().getCliente().getId().equals(clienteId)) {
+
+        UUID id = agendamento.getVeiculo().getCliente().getId();
+
+        if (id == null || !id.equals(clienteId)) {
             throw new ValidationException("O agendamento não pertence ao cliente autenticado.");
         }
         if (agendamento.getStatusAgendamento() != StatusAgendamento.AGENDADO) {
@@ -124,7 +144,12 @@ public class AgendamentoService {
     public void atualizarStatus(UUID agendamentoId, UUID lavaJatoId, StatusAgendamento novoStatus) {
         Agendamento agendamento = buscar(agendamentoId);
         boolean pertence = agendamentoServicoRepository.findByAgendamento(agendamento).stream()
-                .anyMatch(as -> as.getServico().getLavaJato().getId().equals(lavaJatoId));
+                .anyMatch(as -> {
+
+                    UUID idLavaJato = as.getServico().getLavaJato().getId();
+
+                    return idLavaJato != null && idLavaJato.equals(lavaJatoId);
+                });
         if (!pertence) throw new ValidationException("O agendamento não pertence ao lava-jato autenticado.");
         if (novoStatus == StatusAgendamento.AGENDADO) {
             throw new ValidationException("O status AGENDADO é atribuído somente na criação.");
