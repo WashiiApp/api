@@ -56,6 +56,13 @@ public class AgendamentoService {
             if (!servico.isAtivo() || !servico.getLavaJato().getId().equals(lavaJato.getId())) {
                 throw new ValidationException("Todos os serviços devem estar ativos e pertencer ao lava-jato informado.");
             }
+
+            if (!Objects.equals(servico.getLavaJato().getId(), lavaJato.getId())) {
+                throw new ValidationException(
+                        "O serviço não pertence ao lava-jato informado."
+                );
+            }
+
             CategoriaVeiculoServico precoTempo = categoriaVeiculoServicoRepository
                     .findByCategoriaVeiculoAndServico(veiculo.getCategoriaVeiculo(), servico)
                     .orElseThrow(() -> new ValidationException("Há serviço indisponível para a categoria deste veículo."));
