@@ -2,6 +2,7 @@ package br.com.washii.api.controller;
 
 import br.com.washii.api.dto.request.AgendamentoRequest;
 import br.com.washii.api.dto.request.AtualizarStatusAgendamentoRequest;
+import br.com.washii.api.dto.response.AgendamentoCriadoResponse;
 import br.com.washii.api.model.Agendamento;
 import br.com.washii.api.service.AgendamentoService;
 import jakarta.validation.Valid;
@@ -21,7 +22,7 @@ public class AgendamentoController {
 
     @PostMapping
     public ResponseEntity<AgendamentoCriadoResponse> criar(@Valid @RequestBody AgendamentoRequest request,
-                                                            Authentication authentication) {
+                                                           Authentication authentication) {
         Agendamento agendamento = agendamentoService.criar(usuarioId(authentication), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(AgendamentoCriadoResponse.from(agendamento));
     }
@@ -44,14 +45,5 @@ public class AgendamentoController {
         return UUID.fromString(authentication.getName());
     }
 
-    public record AgendamentoCriadoResponse(UUID id, UUID veiculoId, java.time.LocalDate data,
-                                             java.time.LocalTime hora, java.math.BigDecimal precoTotal,
-                                             java.time.LocalTime duracaoTotal,
-                                             br.com.washii.api.model.StatusAgendamento status) {
-        static AgendamentoCriadoResponse from(Agendamento agendamento) {
-            return new AgendamentoCriadoResponse(agendamento.getId(), agendamento.getVeiculo().getId(),
-                    agendamento.getData(), agendamento.getHora(), agendamento.getPrecoTotal(),
-                    agendamento.getDuracaoTotal(), agendamento.getStatusAgendamento());
-        }
-    }
+
 }
