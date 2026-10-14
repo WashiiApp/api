@@ -6,7 +6,9 @@ import br.com.washii.api.exception.ResourceNotFoundException;
 import br.com.washii.api.exception.ValidationException;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
+import br.com.washii.api.repository.specs.AgendamentoSpecs;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -163,5 +165,62 @@ public class AgendamentoService {
     private Agendamento buscar(UUID id) {
         return agendamentoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado."));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Agendamento> filtrar(
+            UUID usuarioId,
+            String placaVeiculo,
+            StatusAgendamento status,
+            LocalDateTime dataInicio,
+            LocalDateTime dataFim,
+            UUID categoriaVeiculoId
+    ) {
+        Specification<Agendamento> specs = Specification
+                .where(AgendamentoSpecs.idUsuarioEquals(usuarioId))
+                .and(AgendamentoSpecs.placaVeiculoEqual(placaVeiculo))
+                .and(AgendamentoSpecs.statusEquals(status))
+                .and(AgendamentoSpecs.categoriaVeiculoIdEquals(categoriaVeiculoId))
+                .and(AgendamentoSpecs.dataBetween(dataInicio, dataFim));
+
+        return agendamentoRepository.findAll(specs);
+    }
+
+    public Agendamento buscar(UUID usuarioId, UUID agendamentoId) {
+        // Busca o agendamento ou lança exceção se não existir
+        Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
+                .orElseThrow(() -> new IllegalArgumentException("Agendamento não encontrado com o id = " + agendamentoId));
+
+        // Valida se o usuário informado (Cliente ou Lava Jato) realmente tem permissão para ver este agendamento
+        boolean pertenceAoUsuario = validarSeAgendamentoPertenceAoUsuario(agendamento, usuarioId);
+
+        if (!pertenceAoUsuario) {
+            throw new IllegalArgumentException("O agendamento informado não pertence ao usuário especificado.");
+        }
+
+        return agendamento;
+    }
+
+    // Método auxiliar privado para reutilizar a validação de vínculo (Cliente ou Lava Jato)
+    private boolean validarSeAgendamentoPertenceAoUsuario(Agendamento agendamento, UUID usuarioId) {
+        // Verifica se é o Cliente dono do veículo do agendamento
+        if (agendamento.getVeiculo() != null &&
+                agendamento.getVeiculo().getCliente() != null &&
+                agendamento.getVeiculo().getCliente().getId().equals(usuarioId)) {
+            return true;
+        }
+
+        // Verifica se é um dos Lava Jatos prestadores de serviço do agendamento
+        if (agendamento.getAgendamentoServicos() != null) {
+            boolean pertenceAoLavaJato = agendamento.getAgendamentoServicos().stream()
+                    .anyMatch(as -> as.getServico() != null &&
+                            as.getServico().getLavaJato() != null &&
+                            as.getServico().getLavaJato().getId().equals(usuarioId));
+            if (pertenceAoLavaJato) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

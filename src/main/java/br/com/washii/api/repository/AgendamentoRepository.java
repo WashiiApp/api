@@ -7,10 +7,12 @@ import java.util.UUID;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface AgendamentoRepository extends JpaRepository<Agendamento, UUID> {
+public interface AgendamentoRepository extends JpaRepository<Agendamento, UUID>, JpaSpecificationExecutor<Agendamento> {
     @Query(value = "select distinct a.id from agendamento a " +
             "join agendamento_servico ags on ags.id_agendamento = a.id " +
             "join servico s on s.id = ags.id_servico " +
