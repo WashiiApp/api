@@ -52,26 +52,30 @@ public class AgendamentoController {
     public ResponseEntity<AgendamentoCriadoResponse> buscarAgendamento(
             @PathVariable UUID usuarioId,
             @PathVariable UUID agendamentoId
-
     ){
-        // TODO
-        return ResponseEntity.badRequest().build();
+        Agendamento agendamento = agendamentoService.buscar(usuarioId, agendamentoId);
+
+        return ResponseEntity.ok(AgendamentoCriadoResponse.from(agendamento));
     }
 
     @GetMapping("/{usuarioId}")
-    public ResponseEntity<List<AgendamentoCriadoResponse>> filtar(
+    public ResponseEntity<List<AgendamentoCriadoResponse>> filtrar(
             @PathVariable UUID usuarioId,
             @RequestParam(required = false) String placaVeiculo,
             @RequestParam(required = false) StatusAgendamento status,
             @RequestParam(required = false) LocalDateTime dataInicio,
             @RequestParam(required = false) LocalDateTime dataFim,
-            @RequestParam(required = false) String categoriaVeiculo
+            @RequestParam(required = false) UUID categoriaVeiculoId
 
     ){
 
-        List<Agendamento> agendamentos =  agendamentoService.filtrar(usuarioId, placaVeiculo, status, dataInicio, dataFim, categoriaVeiculo);
+        List<Agendamento> agendamentos =  agendamentoService
+                .filtrar(usuarioId, placaVeiculo, status, dataInicio, dataFim, categoriaVeiculoId);
 
-        return ResponseEntity.noContent().build();
+        List<AgendamentoCriadoResponse> response = agendamentos.stream()
+                .map(AgendamentoCriadoResponse::from)
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
-
 }

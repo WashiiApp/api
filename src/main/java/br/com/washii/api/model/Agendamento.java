@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -43,6 +44,10 @@ public class Agendamento {
     @Enumerated(EnumType.STRING)
     @Column(name = "status_agendamento", nullable = false, length = 20)
     private StatusAgendamento statusAgendamento;
+
+    // Na classe Agendamento.java, adicione:
+    @OneToMany(mappedBy = "agendamento", fetch = FetchType.LAZY)
+    private List<AgendamentoServico> agendamentoServicos;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
