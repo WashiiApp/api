@@ -12,6 +12,7 @@ public record AtualizacaoLavaJatoRequest(
         String numero,
         String bairro,
         String cep,
+        String telefone,
         Double latitude,
         Double longitude
 ) {}

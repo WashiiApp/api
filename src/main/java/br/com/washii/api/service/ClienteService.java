@@ -6,9 +6,14 @@ import br.com.washii.api.dto.response.ClienteResponse;
 import br.com.washii.api.exception.ResourceNotFoundException;
 import br.com.washii.api.model.CategoriaVeiculo;
 import br.com.washii.api.model.Cliente;
+import br.com.washii.api.model.Telefone;
+import br.com.washii.api.model.Usuario;
+import br.com.washii.api.model.UsuarioTelefone;
 import br.com.washii.api.model.Veiculo;
 import br.com.washii.api.repository.CategoriaVeiculoRepository;
 import br.com.washii.api.repository.ClienteRepository;
+import br.com.washii.api.repository.TelefoneRepository;
+import br.com.washii.api.repository.UsuarioTelefoneRepository;
 import br.com.washii.api.repository.VeiculoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -24,6 +29,8 @@ public class ClienteService {
     private final ClienteRepository clienteRepository;
     private final VeiculoRepository veiculoRepository;
     private final CategoriaVeiculoRepository catVeiculoRepository;
+    private final TelefoneRepository telefoneRepository;
+    private final UsuarioTelefoneRepository usuarioTelefoneRepository;
 
     @Transactional(readOnly = true)
     public ClienteResponse buscarPorId(UUID id) {
@@ -44,9 +51,39 @@ public class ClienteService {
         cliente.setPrimeiroNome(clienteAtualizado.primeiroNome());
         cliente.setSobreNome(clienteAtualizado.sobreNome());
 
+        atualizarTelefone(cliente, clienteAtualizado.telefone());
+
         clienteRepository.save(cliente);
 
         return ClienteResponse.from(cliente);
+    }
+
+    private void atualizarTelefone(Usuario usuario, String telefoneRaw) {
+        if (telefoneRaw == null || telefoneRaw.isBlank()) {
+            return;
+        }
+
+        String digitos = telefoneRaw.replaceAll("\\D", "");
+        if (digitos.length() < 10 || digitos.length() > 11) {
+            return;
+        }
+
+        String ddd = digitos.substring(0, 2);
+        String numero = digitos.substring(2);
+
+        Telefone telefone = telefoneRepository.findByDddAndNumero(ddd, numero)
+                .orElseGet(() -> telefoneRepository.save(new Telefone(ddd, numero)));
+
+        UsuarioTelefone usuarioTelefone = usuarioTelefoneRepository.findFirstByUsuario(usuario)
+                .orElseGet(() -> new UsuarioTelefone(usuario, telefone));
+
+        usuarioTelefone.setTelefone(telefone);
+        usuarioTelefoneRepository.save(usuarioTelefone);
+
+        if (usuario.getTelefones() != null) {
+            usuario.getTelefones().clear();
+            usuario.getTelefones().add(usuarioTelefone);
+        }
     }
 
     @Transactional
