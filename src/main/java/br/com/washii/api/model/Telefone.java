@@ -39,4 +39,9 @@ public class Telefone {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    public Telefone(String ddd, String numero) {
+        this.ddd = ddd;
+        this.numero = numero;
+    }
 }

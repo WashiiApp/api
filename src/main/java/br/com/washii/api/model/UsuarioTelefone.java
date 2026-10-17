@@ -37,4 +37,9 @@ public class UsuarioTelefone {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
+
+    public UsuarioTelefone(Usuario usuario, Telefone telefone) {
+        this.usuario = usuario;
+        this.telefone = telefone;
+    }
 }
