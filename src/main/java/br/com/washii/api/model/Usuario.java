@@ -8,6 +8,8 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.data.domain.Persistable;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -35,13 +37,17 @@ public class Usuario implements Persistable<UUID> {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TipoUsuario tipoUsuario;
+    private TipoRemetente tipoRemetente;
 
     @Column(nullable = false, length = 100)
     private String cidade;
 
     @Column(nullable = false, length = 2)
     private String estado;
+
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @ToString.Exclude
+    private List<UsuarioTelefone> telefones = new ArrayList<>();
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -57,5 +63,16 @@ public class Usuario implements Persistable<UUID> {
     @Override
     public boolean isNew() {
         return novo;
+    }
+
+    public String getTelefone() {
+        if (telefones == null || telefones.isEmpty()) {
+            return null;
+        }
+        Telefone tel = telefones.get(0).getTelefone();
+        if (tel == null) {
+            return null;
+        }
+        return tel.getDdd() + tel.getNumero();
     }
 }

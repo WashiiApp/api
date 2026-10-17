@@ -15,6 +15,7 @@ public record LavaJatoResponse(
         String nomeFantasia,
         Integer fluxoSimultaneo,
         String cnpj,
+        String telefone,
         EnderecoResponseDTO endereco,
         CoordenadasResponseDTO coordenadas
 ) {
@@ -54,6 +55,7 @@ public record LavaJatoResponse(
                 lavaJato.getNomeFantasia(),
                 lavaJato.getFluxoSimultaneo(),
                 lavaJato.getCnpj(),
+                lavaJato.getTelefone(),
                 enderecoDto,
                 coordenadasDto
         );

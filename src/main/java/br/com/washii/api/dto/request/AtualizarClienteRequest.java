@@ -23,5 +23,8 @@ public record AtualizarClienteRequest(
         String primeiroNome,
         @NotBlank(message = "O sobrenome é obrigatório.")
         @Size(max = 100, message = "O sobrenome deve ter no máximo 100 caracteres.")
-        String sobreNome
+        String sobreNome,
+        @Size(max = 20, message = "O telefone deve ter no máximo 20 caracteres.")
+        @Pattern(regexp = "^$|^(?:\\(?\\d{2}\\)?\\s?)?\\d{4,5}-?\\d{4}$|^\\d{10,11}$", message = "O telefone deve conter DDD e número válido.")
+        String telefone
 ) {}
