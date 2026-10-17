@@ -9,9 +9,14 @@ import br.com.washii.api.exception.ValidationException;
 import br.com.washii.api.model.Disponibilidade;
 import br.com.washii.api.model.DiasSemana;
 import br.com.washii.api.model.LavaJato;
+import br.com.washii.api.model.Telefone;
+import br.com.washii.api.model.Usuario;
+import br.com.washii.api.model.UsuarioTelefone;
 import br.com.washii.api.repository.DisponibilidadeRepository;
 import br.com.washii.api.repository.DiasSemanaRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
+import br.com.washii.api.repository.TelefoneRepository;
+import br.com.washii.api.repository.UsuarioTelefoneRepository;
 import lombok.RequiredArgsConstructor;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
@@ -30,6 +35,8 @@ public class LavaJatoService {
     private final LavaJatoRepository lavaJatoRepository;
     private final DisponibilidadeRepository disponibilidadeRepository;
     private final DiasSemanaRepository diasSemanaRepository;
+    private final TelefoneRepository telefoneRepository;
+    private final UsuarioTelefoneRepository usuarioTelefoneRepository;
 
     // Gestão cadastral do sistema
     @Transactional
@@ -57,6 +64,10 @@ public class LavaJatoService {
         lavaJato.setBairro(request.bairro());
         lavaJato.setCep(request.cep());
 
+        if (request.telefone() != null && !request.telefone().isBlank()) {
+            atualizarTelefone(lavaJato, request.telefone());
+        }
+
         if (request.latitude() != null && request.longitude() != null) {
             GeometryFactory geometryFactory = new GeometryFactory(
                     new PrecisionModel(),
@@ -72,6 +83,34 @@ public class LavaJatoService {
         }
 
         lavaJatoRepository.save(lavaJato);
+    }
+
+    private void atualizarTelefone(Usuario usuario, String telefoneRaw) {
+        if (telefoneRaw == null || telefoneRaw.isBlank()) {
+            return;
+        }
+
+        String digitos = telefoneRaw.replaceAll("\\D", "");
+        if (digitos.length() < 10 || digitos.length() > 11) {
+            return;
+        }
+
+        String ddd = digitos.substring(0, 2);
+        String numero = digitos.substring(2);
+
+        Telefone telefone = telefoneRepository.findByDddAndNumero(ddd, numero)
+                .orElseGet(() -> telefoneRepository.save(new Telefone(ddd, numero)));
+
+        UsuarioTelefone usuarioTelefone = usuarioTelefoneRepository.findFirstByUsuario(usuario)
+                .orElseGet(() -> new UsuarioTelefone(usuario, telefone));
+
+        usuarioTelefone.setTelefone(telefone);
+        usuarioTelefoneRepository.save(usuarioTelefone);
+
+        if (usuario.getTelefones() != null) {
+            usuario.getTelefones().clear();
+            usuario.getTelefones().add(usuarioTelefone);
+        }
     }
 
     @Transactional

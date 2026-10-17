@@ -16,6 +16,7 @@ public record ClienteResponse(
         String cpf,
         String sobreNome,
         String primeiroNome,
+        String telefone,
         OffsetDateTime createdAt,
         OffsetDateTime updatedAt
 ) {
@@ -30,6 +31,7 @@ public record ClienteResponse(
                 cliente.getCpf(),
                 cliente.getSobreNome(),
                 cliente.getPrimeiroNome(),
+                cliente.getTelefone(),
                 cliente.getCreatedAt(),
                 cliente.getUpdatedAt()
         );
