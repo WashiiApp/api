@@ -203,24 +203,26 @@ public class AgendamentoService {
 
     // Método auxiliar privado para reutilizar a validação de vínculo (Cliente ou Lava Jato)
     private boolean validarSeAgendamentoPertenceAoUsuario(Agendamento agendamento, UUID usuarioId) {
+
         // Verifica se é o Cliente dono do veículo do agendamento
-        if (agendamento.getVeiculo() != null &&
-                agendamento.getVeiculo().getCliente() != null &&
-                agendamento.getVeiculo().getCliente().getId().equals(usuarioId)) {
+        boolean pertenceAoCliente = Optional.ofNullable(agendamento.getVeiculo())
+                .map(Veiculo::getCliente)
+                .map(Cliente::getId)
+                .map(id -> id.equals(usuarioId))
+                .orElse(false);
+
+        if (pertenceAoCliente) {
             return true;
         }
 
         // Verifica se é um dos Lava Jatos prestadores de serviço do agendamento
-        if (agendamento.getAgendamentoServicos() != null) {
-            boolean pertenceAoLavaJato = agendamento.getAgendamentoServicos().stream()
-                    .anyMatch(as -> as.getServico() != null &&
-                            as.getServico().getLavaJato() != null &&
-                            as.getServico().getLavaJato().getId().equals(usuarioId));
-            if (pertenceAoLavaJato) {
-                return true;
-            }
-        }
-
-        return false;
+        return Optional.ofNullable(agendamento.getAgendamentoServicos())
+                .orElse(Collections.emptyList())
+                .stream()
+                .anyMatch(as -> Optional.ofNullable(as.getServico())
+                        .map(Servico::getLavaJato)
+                        .map(LavaJato::getId)
+                        .map(id -> id.equals(usuarioId))
+                        .orElse(false));
     }
 }
