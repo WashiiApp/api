@@ -191,7 +191,7 @@ public class AgendamentoService {
         Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
                 .orElseThrow(() -> new IllegalArgumentException("Agendamento não encontrado com o id = " + agendamentoId));
 
-        // Valida se o usuário informado (Cliente ou Lava Jato) realmente tem permissão para ver este agendamento
+        // Valida se o usuario informado (Cliente ou Lava Jato) realmente tem permissão para ver este agendamento
         boolean pertenceAoUsuario = validarSeAgendamentoPertenceAoUsuario(agendamento, usuarioId);
 
         if (!pertenceAoUsuario) {
