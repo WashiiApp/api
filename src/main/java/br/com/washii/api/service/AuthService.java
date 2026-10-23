@@ -167,5 +167,6 @@ public class AuthService {
 
 
     public void logout() {
+        // TODO adiconar funcionalidade de logout no sistema
     }
 }
