@@ -126,7 +126,7 @@ public class ClienteService {
         Veiculo veiculo = veiculoRepository.findById(veiculoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id = " + veiculoId));
 
-        if (!veiculoRepository.existsByIdAndCliente(veiculoId, cliente)) {
+        if (Boolean.FALSE.equals(veiculoRepository.existsByIdAndCliente(veiculoId, cliente))) {
             throw new IllegalArgumentException("Veículo não pertence ao cliente informado.");
         }
 
@@ -150,7 +150,7 @@ public class ClienteService {
         Veiculo veiculo = veiculoRepository.findById(veiculoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id = " + veiculoId));
 
-        if (!veiculoRepository.existsByIdAndCliente(veiculoId, cliente)) {
+        if (Boolean.FALSE.equals(veiculoRepository.existsByIdAndCliente(veiculoId, cliente))) {
             throw new IllegalArgumentException("Veículo não pertence ao cliente informado.");
         }
 
