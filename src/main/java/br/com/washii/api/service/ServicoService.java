@@ -147,7 +147,7 @@ public class ServicoService {
                         "Serviço não encontrado com o id = " + servicoId
                 ));
 
-        if (!servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato)) {
+        if (Boolean.FALSE.equals(servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato))) {
             throw new IllegalArgumentException("O serviço não pertence ao lava jato informado");
         }
 

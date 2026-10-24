@@ -18,10 +18,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
+import java.util.logging.Logger;
 
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    Logger logger = Logger.getLogger(AuthService.class.getName());
 
     private final AuthProvider authProvider;
     private final ClienteRepository clienteRepository;
@@ -158,14 +161,12 @@ public class AuthService {
         try {
             authProvider.excluir(id);
         } catch (Exception rollbackException) {
-            System.err.println(
-                    "Falha ao excluir usuário do Supabase: "
-                            + rollbackException.getMessage()
-            );
+            logger.info("Falha ao excluir usuario do Supabase"+ rollbackException.getMessage());
         }
     }
 
 
     public void logout() {
+        // TODO adiconar funcionalidade de logout no sistema
     }
 }
