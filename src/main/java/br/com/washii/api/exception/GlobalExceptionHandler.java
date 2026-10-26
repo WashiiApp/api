@@ -1,7 +1,10 @@
+
 package br.com.washii.api.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,12 +26,19 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public StandardError handleResourceNotFound(
             ResourceNotFoundException exception,
             HttpServletRequest request
     ) {
-        return error(HttpStatus.NOT_FOUND, exception.getMessage(), request);
+        return error(
+                HttpStatus.NOT_FOUND,
+                exception.getMessage(),
+                request
+        );
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
@@ -36,7 +46,11 @@ public class GlobalExceptionHandler {
             InvalidCredentialsException exception,
             HttpServletRequest request
     ) {
-        return error(HttpStatus.UNAUTHORIZED, exception.getMessage(), request);
+        return error(
+                HttpStatus.UNAUTHORIZED,
+                exception.getMessage(),
+                request
+        );
     }
 
     @ExceptionHandler(BusinessException.class)
@@ -44,7 +58,11 @@ public class GlobalExceptionHandler {
             BusinessException exception,
             HttpServletRequest request
     ) {
-        return error(HttpStatus.CONFLICT, exception.getMessage(), request);
+        return error(
+                HttpStatus.CONFLICT,
+                exception.getMessage(),
+                request
+        );
     }
 
     @ExceptionHandler(ValidationException.class)
@@ -52,7 +70,11 @@ public class GlobalExceptionHandler {
             ValidationException exception,
             HttpServletRequest request
     ) {
-        return error(HttpStatus.BAD_REQUEST, exception.getMessage(), request);
+        return error(
+                HttpStatus.BAD_REQUEST,
+                exception.getMessage(),
+                request
+        );
     }
 
     @ExceptionHandler(ExternalServiceException.class)
@@ -60,7 +82,13 @@ public class GlobalExceptionHandler {
             ExternalServiceException exception,
             HttpServletRequest request
     ) {
-        return error(HttpStatus.BAD_GATEWAY, exception.getMessage(), request);
+        log.error("Erro ao comunicar com serviço externo.", exception);
+
+        return error(
+                HttpStatus.BAD_GATEWAY,
+                exception.getMessage(),
+                request
+        );
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -72,14 +100,21 @@ public class GlobalExceptionHandler {
                 .getFieldErrors()
                 .stream()
                 .sorted(Comparator.comparing(FieldError::getField))
-                .map(fieldError -> fieldError.getField() + ": " + fieldError.getDefaultMessage())
+                .map(fieldError ->
+                        fieldError.getField() + ": "
+                                + fieldError.getDefaultMessage()
+                )
                 .collect(Collectors.joining("; "));
 
         if (message.isBlank()) {
             message = "Os dados enviados são inválidos.";
         }
 
-        return error(HttpStatus.BAD_REQUEST, message, request);
+        return error(
+                HttpStatus.BAD_REQUEST,
+                message,
+                request
+        );
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
@@ -89,11 +124,18 @@ public class GlobalExceptionHandler {
     ) {
         String message = exception.getConstraintViolations()
                 .stream()
-                .map(violation -> violation.getPropertyPath() + ": " + violation.getMessage())
+                .map(violation ->
+                        violation.getPropertyPath() + ": "
+                                + violation.getMessage()
+                )
                 .sorted()
                 .collect(Collectors.joining("; "));
 
-        return error(HttpStatus.BAD_REQUEST, message, request);
+        return error(
+                HttpStatus.BAD_REQUEST,
+                message,
+                request
+        );
     }
 
     @ExceptionHandler({
@@ -102,28 +144,50 @@ public class GlobalExceptionHandler {
             MethodArgumentTypeMismatchException.class
     })
     public StandardError handleMalformedRequest(
-            Exception exception,
             HttpServletRequest request
     ) {
-        exception.printStackTrace();
-        return error(HttpStatus.BAD_REQUEST, "A requisição contém dados ausentes ou inválidos.", request);
+        log.warn(
+                "Requisição com dados ausentes ou inválidos na rota {}.",
+                request.getRequestURI()
+        );
+
+        return error(
+                HttpStatus.BAD_REQUEST,
+                "A requisição contém dados ausentes ou inválidos.",
+                request
+        );
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public StandardError handleMethodNotSupported(
-            HttpRequestMethodNotSupportedException exception,
             HttpServletRequest request
     ) {
-        return error(HttpStatus.METHOD_NOT_ALLOWED, "Método HTTP não permitido para este recurso.", request);
+        log.warn(
+                "Método HTTP não permitido na rota {}.",
+                request.getRequestURI()
+        );
+
+        return error(
+                HttpStatus.METHOD_NOT_ALLOWED,
+                "Método HTTP não permitido para este recurso.",
+                request
+        );
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
     public StandardError handleNoResourceFound(
-            NoResourceFoundException exception,
             HttpServletRequest request
     ) {
-        exception.printStackTrace();
-        return error(HttpStatus.NOT_FOUND, "Endpoint não encontrado.", request);
+        log.warn(
+                "Endpoint não encontrado: {}",
+                request.getRequestURI()
+        );
+
+        return error(
+                HttpStatus.NOT_FOUND,
+                "Endpoint não encontrado.",
+                request
+        );
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -131,8 +195,17 @@ public class GlobalExceptionHandler {
             DataIntegrityViolationException exception,
             HttpServletRequest request
     ) {
-        exception.printStackTrace();
-        return error(HttpStatus.CONFLICT, "A operação viola uma regra de integridade dos dados.", request);
+        log.error(
+                "Violação de integridade dos dados na rota {}.",
+                request.getRequestURI(),
+                exception
+        );
+
+        return error(
+                HttpStatus.CONFLICT,
+                "A operação viola uma regra de integridade dos dados.",
+                request
+        );
     }
 
     @ExceptionHandler(RestClientResponseException.class)
@@ -140,6 +213,12 @@ public class GlobalExceptionHandler {
             RestClientResponseException exception,
             HttpServletRequest request
     ) {
+        log.warn(
+                "O provedor externo retornou HTTP {} na rota {}.",
+                exception.getStatusCode().value(),
+                request.getRequestURI()
+        );
+
         return error(
                 HttpStatus.BAD_GATEWAY,
                 "O provedor externo não pôde concluir a operação.",
@@ -152,12 +231,19 @@ public class GlobalExceptionHandler {
             ResponseStatusException exception,
             HttpServletRequest request
     ) {
-        HttpStatus status = HttpStatus.valueOf(exception.getStatusCode().value());
+        HttpStatus status = HttpStatus.valueOf(
+                exception.getStatusCode().value()
+        );
+
         String message = exception.getReason() == null
                 ? status.getReasonPhrase()
                 : exception.getReason();
 
-        return error(status, message, request);
+        return error(
+                status,
+                message,
+                request
+        );
     }
 
     @ExceptionHandler(Exception.class)
@@ -165,7 +251,12 @@ public class GlobalExceptionHandler {
             Exception exception,
             HttpServletRequest request
     ) {
-        exception.printStackTrace();
+        log.error(
+                "Erro interno inesperado na rota {}.",
+                request.getRequestURI(),
+                exception
+        );
+
         return error(
                 HttpStatus.INTERNAL_SERVER_ERROR,
                 "Ocorreu um erro interno inesperado.",
@@ -173,7 +264,11 @@ public class GlobalExceptionHandler {
         );
     }
 
-    private StandardError error(HttpStatus status, String message, HttpServletRequest request) {
+    private StandardError error(
+            HttpStatus status,
+            String message,
+            HttpServletRequest request
+    ) {
         return new StandardError(
                 Instant.now(),
                 status.value(),
