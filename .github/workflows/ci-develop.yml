@@ -29,8 +29,7 @@ jobs:
           cache: maven
 
       - name: Gerar JAR sem executar testes
-        run: ./mvnw --batch-mode --no-transfer-progress -Dmaven.test.skip=true package
-
+        run: bash ./mvnw --batch-mode --no-transfer-progress -Dmaven.test.skip=true package
       - name: Publicar JAR como artefato
         uses: actions/upload-artifact@v7
         with:
