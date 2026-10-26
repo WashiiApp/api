@@ -1,0 +1,40 @@
+name: CI - develop
+
+on:
+  push:
+    branches:
+      - develop
+  pull_request:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v7
+
+      - name: Configurar Java 25 e cache Maven
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      - name: Gerar JAR sem executar testes
+        run: ./mvnw --batch-mode --no-transfer-progress -Dmaven.test.skip=true package
+
+      - name: Publicar JAR como artefato
+        uses: actions/upload-artifact@v7
+        with:
+          name: washii-api-${{ github.sha }}
+          path: target/*.jar
+          if-no-files-found: error
+          retention-days: 7
