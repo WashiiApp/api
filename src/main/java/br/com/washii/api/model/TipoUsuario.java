@@ -1,6 +1,6 @@
 package br.com.washii.api.model;
 
-public enum TipoRemetente {
+public enum TipoUsuario {
     LAVA_JATO,
     CLIENTE
 
