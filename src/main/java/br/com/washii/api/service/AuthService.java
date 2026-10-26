@@ -6,7 +6,7 @@ import br.com.washii.api.dto.request.LoginRequest;
 import br.com.washii.api.dto.response.LoginResponse;
 import br.com.washii.api.model.Cliente;
 import br.com.washii.api.model.LavaJato;
-import br.com.washii.api.model.TipoRemetente;
+import br.com.washii.api.model.TipoUsuario;
 import br.com.washii.api.repository.ClienteRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
 import lombok.RequiredArgsConstructor;
@@ -73,7 +73,7 @@ public class AuthService {
         cliente.setCpf(request.cpf());
         cliente.setPrimeiroNome(request.nome());
         cliente.setSobreNome(request.sobrenome());
-        cliente.setTipoRemetente(TipoRemetente.CLIENTE);
+        cliente.setTipoUsuario(TipoUsuario.CLIENTE);
 
         return cliente;
     }
@@ -120,7 +120,7 @@ public class AuthService {
         lavaJato.setFluxoSimultaneo(request.fluxoSimultaneo());
         lavaJato.setNomeFantasia(request.nomeFantasia());
         lavaJato.setRazaoSocial(request.razaoSocial());
-        lavaJato.setTipoRemetente(TipoRemetente.LAVA_JATO);
+        lavaJato.setTipoUsuario(TipoUsuario.LAVA_JATO);
 
         if (request.coordenadas() != null) {
             Point point = converterCoordenadasParaPoint(

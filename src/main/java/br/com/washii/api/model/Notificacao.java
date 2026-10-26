@@ -42,8 +42,8 @@ public class Notificacao {
     private boolean lida = false;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "tipo_remetente", nullable = false, length = 15)
-    private TipoRemetente tipoRemetente;
+    @Column(name = "tipo_usuario", nullable = false, length = 15)
+    private TipoUsuario tipoUsuario;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
