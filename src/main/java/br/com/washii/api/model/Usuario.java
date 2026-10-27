@@ -37,7 +37,6 @@ public class Usuario implements Persistable<UUID> {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "tipo_usuario", nullable = false)
-
     private TipoUsuario tipoUsuario;
 
     @Column(nullable = false, length = 100)
