@@ -2,9 +2,13 @@ package br.com.washii.api.service;
 
 import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
+import br.com.washii.api.dto.response.ServicoCacheWrapper;
+import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +25,7 @@ public class ServicoService {
     private final CategoriaVeiculoServicoRepository catVeiculoServicoRepository;
     private final LavaJatoRepository lavaJatoRepository;
 
+    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void salvarServico(UUID lavaJatoId, CadastroServicoRequest request){
         LavaJato lavaJato = buscarLavaJatoOuLancar(lavaJatoId);
@@ -38,10 +43,17 @@ public class ServicoService {
         servicoRepository.save(servico);
     }
 
+    @Cacheable(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional(readOnly = true)
-    public List<Servico> buscarServicosPorLavaJato(UUID lavaJatoId) {
+    public ServicoCacheWrapper buscarServicosPorLavaJato(UUID lavaJatoId) {
         LavaJato lavaJato = buscarLavaJatoOuLancar(lavaJatoId);
-        return servicoRepository.findAllByLavaJato(lavaJato);
+        List<Servico> servicos = servicoRepository.findAllByLavaJato(lavaJato);
+
+        List<ServicoResponse> responseList = servicos.stream()
+                .map(ServicoResponse::fromEntity)
+                .toList();
+
+        return new ServicoCacheWrapper(responseList);
     }
 
     @Transactional(readOnly = true)
@@ -49,6 +61,7 @@ public class ServicoService {
         return validarEObterServico(lavaJatoId, servicoId);
     }
 
+    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void atualizarServico(UUID lavaJatoId, UUID servicoId, CadastroServicoRequest request) {
         Servico servico = validarEObterServico(lavaJatoId, servicoId);
@@ -63,6 +76,7 @@ public class ServicoService {
         servicoRepository.save(servico);
     }
 
+    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void deletarServico(UUID lavaJatoId, UUID servicoId) {
         Servico servico = validarEObterServico(lavaJatoId, servicoId);

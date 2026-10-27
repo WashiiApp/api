@@ -4,10 +4,7 @@ import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
 import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
 import br.com.washii.api.dto.request.ExpedienteRequest;
-import br.com.washii.api.dto.response.CategoriaVeiculoServicoResponse;
-import br.com.washii.api.dto.response.ExpedienteResponse;
-import br.com.washii.api.dto.response.LavaJatoResponse;
-import br.com.washii.api.dto.response.ServicoResponse;
+import br.com.washii.api.dto.response.*;
 import br.com.washii.api.model.Servico;
 import br.com.washii.api.service.LavaJatoService;
 import br.com.washii.api.service.ServicoService;
@@ -100,13 +97,9 @@ public class LavaJatoController {
 
     @GetMapping("/{lavaJatoId}/servicos")
     public ResponseEntity<List<ServicoResponse>> buscarServicos(@PathVariable UUID lavaJatoId){
-        List<Servico> servicos = servicoService.buscarServicosPorLavaJato(lavaJatoId);
+        ServicoCacheWrapper servicoCacheWrapper = servicoService.buscarServicosPorLavaJato(lavaJatoId);
 
-        List<ServicoResponse> servicosDTO = servicos.stream()
-                .map(ServicoResponse::fromEntity)
-                .toList();
-
-        return ResponseEntity.ok(servicosDTO);
+        return ResponseEntity.ok(servicoCacheWrapper.servicos());
     }
 
     @GetMapping("/{lavaJatoId}/servicos/{servicoId}")

@@ -9,6 +9,14 @@ spring:
         jwt:
           jwk-set-uri: https://${USER}.supabase.co/auth/v1/.well-known/jwks.json
           issuer-uri: https://${USER}.supabase.co/auth/v1
+  cache:
+    type: redis
+    redis:
+      time-to-live: 30000
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 supabase:
   url: https://${USER}.supabase.co
