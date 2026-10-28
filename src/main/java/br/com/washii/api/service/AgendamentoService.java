@@ -138,7 +138,7 @@ public class AgendamentoService {
         }
 
         if (agendamento.getStatusAgendamento() == StatusAgendamento.CONCLUIDO) {
-            throw new BusinessException("Somente agendamentos que ainda não foram concluidos, podem ser cancelados");
+            throw new BusinessException("Agendamentos concluídos não podem ser cancelados.");
         }
 
         if (agendamento.getStatusAgendamento() != StatusAgendamento.AGENDADO) {
