@@ -136,6 +136,11 @@ public class AgendamentoService {
         if (id == null || !id.equals(clienteId)) {
             throw new ValidationException("O agendamento não pertence ao cliente autenticado.");
         }
+
+        if (agendamento.getStatusAgendamento() == StatusAgendamento.CONCLUIDO) {
+            throw new BusinessException("Somente agendamentos que ainda não foram concluidos, podem ser cancelados");
+        }
+
         if (agendamento.getStatusAgendamento() != StatusAgendamento.AGENDADO) {
             throw new BusinessException("Somente agendamentos ainda agendados podem ser cancelados pelo cliente.");
         }
