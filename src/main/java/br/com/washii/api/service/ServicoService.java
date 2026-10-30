@@ -2,7 +2,6 @@ package br.com.washii.api.service;
 
 import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
-import br.com.washii.api.dto.response.ServicoCacheWrapper;
 import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
@@ -45,15 +44,13 @@ public class ServicoService {
 
     @Cacheable(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional(readOnly = true)
-    public ServicoCacheWrapper buscarServicosPorLavaJato(UUID lavaJatoId) {
+    public List<ServicoResponse> buscarServicosPorLavaJato(UUID lavaJatoId) {
         LavaJato lavaJato = buscarLavaJatoOuLancar(lavaJatoId);
         List<Servico> servicos = servicoRepository.findAllByLavaJato(lavaJato);
 
-        List<ServicoResponse> responseList = servicos.stream()
+        return servicos.stream()
                 .map(ServicoResponse::fromEntity)
                 .toList();
-
-        return new ServicoCacheWrapper(responseList);
     }
 
     @Transactional(readOnly = true)

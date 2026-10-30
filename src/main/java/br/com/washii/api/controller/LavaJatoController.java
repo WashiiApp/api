@@ -97,9 +97,9 @@ public class LavaJatoController {
 
     @GetMapping("/{lavaJatoId}/servicos")
     public ResponseEntity<List<ServicoResponse>> buscarServicos(@PathVariable UUID lavaJatoId){
-        ServicoCacheWrapper servicoCacheWrapper = servicoService.buscarServicosPorLavaJato(lavaJatoId);
+        List<ServicoResponse> response = servicoService.buscarServicosPorLavaJato(lavaJatoId);
 
-        return ResponseEntity.ok(servicoCacheWrapper.servicos());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{lavaJatoId}/servicos/{servicoId}")

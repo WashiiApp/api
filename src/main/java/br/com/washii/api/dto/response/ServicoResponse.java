@@ -1,6 +1,8 @@
 package br.com.washii.api.dto.response;
 
 import br.com.washii.api.model.Servico;
+
+import java.io.Serializable;
 import java.util.UUID;
 
 public record ServicoResponse(
@@ -9,7 +11,7 @@ public record ServicoResponse(
         String descricao,
         boolean ativo,
         CategoriaResumoDTO categoriaServico
-) {
+) implements Serializable {
 
     public static ServicoResponse fromEntity(Servico servico) {
         if (servico == null) {
@@ -36,5 +38,5 @@ public record ServicoResponse(
     public record CategoriaResumoDTO(
             UUID id,
             String nome
-    ) {}
+    ) implements Serializable{}
 }
