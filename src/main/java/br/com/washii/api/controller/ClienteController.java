@@ -54,6 +54,11 @@ public class ClienteController {
         return ResponseEntity.ok(clienteService.listarVeiculos(clienteId));
     }
 
+    @GetMapping("/veiculos/placa/{placa}")
+    public ResponseEntity<VeiculoDTO> buscarVeiculoPorPlaca(@PathVariable String placa) {
+        return ResponseEntity.ok(clienteService.buscarVeiculoPorPlaca(placa));
+    }
+
     @PutMapping("/{clienteId}/veiculos/{veiculoId}")
     public ResponseEntity<Void> atualizarVeiculo(
             @PathVariable UUID clienteId,

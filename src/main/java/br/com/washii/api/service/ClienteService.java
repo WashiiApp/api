@@ -4,6 +4,7 @@ import br.com.washii.api.dto.VeiculoDTO;
 import br.com.washii.api.dto.request.AtualizarClienteRequest;
 import br.com.washii.api.dto.response.ClienteResponse;
 import br.com.washii.api.exception.ResourceNotFoundException;
+import br.com.washii.api.exception.ValidationException;
 import br.com.washii.api.model.CategoriaVeiculo;
 import br.com.washii.api.model.Cliente;
 import br.com.washii.api.model.Telefone;
@@ -116,6 +117,19 @@ public class ClienteService {
         return veiculos.stream()
                 .map(VeiculoDTO::from)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public VeiculoDTO buscarVeiculoPorPlaca(String placa) {
+        String placaNormalizada = placa == null ? "" : placa.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+        if (!placaNormalizada.matches("^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$")) {
+            throw new ValidationException("A placa informada é inválida.");
+        }
+
+        Veiculo veiculo = veiculoRepository.findByPlaca(placaNormalizada)
+                .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com a placa = " + placaNormalizada));
+
+        return VeiculoDTO.from(veiculo);
     }
 
     @Transactional
