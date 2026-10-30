@@ -19,7 +19,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgis/postgis:16-3.4-alpine
         env:
           POSTGRES_DB: washii_test
           POSTGRES_USER: postgres
@@ -37,6 +37,7 @@ jobs:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       SUPABASE_PROJECT_REF: ci-test
+      SUPABASE_PUBLIC_KEY: ci-test-public-key
       SECRET_KEY: ci-test-secret
 
     steps:
