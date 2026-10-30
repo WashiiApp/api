@@ -5,6 +5,7 @@ import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
 import br.com.washii.api.dto.request.ExpedienteRequest;
 import br.com.washii.api.dto.response.*;
+import br.com.washii.api.model.CategoriaVeiculoServico;
 import br.com.washii.api.model.Servico;
 import br.com.washii.api.service.LavaJatoService;
 import br.com.washii.api.service.ServicoService;
@@ -131,8 +132,22 @@ public class LavaJatoController {
         return ResponseEntity.noContent().build();
     }
 
+    @GetMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
+    public ResponseEntity<List<CategoriaVeiculoServicoResponse>> buscarCustomizacoes(
+        @PathVariable UUID lavaJatoId,
+        @PathVariable UUID servicoId
+    ){
+        List<CategoriaVeiculoServico> categoriaVeiculoServicos = servicoService.buscarCustomizacoesDeServicos(lavaJatoId, servicoId);
+
+        List<CategoriaVeiculoServicoResponse> response = categoriaVeiculoServicos.stream()
+                .map(CategoriaVeiculoServicoResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
-    public ResponseEntity<Void> customizarServico(
+    public ResponseEntity<Void> atualizarCustomizacaoDeServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
             @RequestBody List<CategoriaVeiculoServicoRequest> request
@@ -142,7 +157,7 @@ public class LavaJatoController {
     }
 
     @PutMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
-    public ResponseEntity<Void> customizarServico(
+    public ResponseEntity<Void> atualizarCustomizacaoDeServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
             @PathVariable UUID precoId,

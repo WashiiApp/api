@@ -7,6 +7,7 @@ import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -42,6 +43,9 @@ public class Servico {
 
     @Column(nullable = false, columnDefinition = "text") // Especifica que é do tipo text (sem limite padrão do varchar)
     private String descricao;
+
+    @OneToMany(mappedBy = "servico", fetch = FetchType.LAZY)
+    private List<CategoriaVeiculoServico> custom;
 
     @Column(nullable = false)
     private boolean ativo = true;

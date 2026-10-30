@@ -1,6 +1,8 @@
 package br.com.washii.api.dto.response;
 
 import br.com.washii.api.model.CategoriaVeiculoServico;
+
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.UUID;
@@ -10,7 +12,7 @@ public record CategoriaVeiculoServicoResponse(
         LocalTime duracao,
         BigDecimal preco,
         CategoriaVeiculoResumoDTO categoriaVeiculo
-) {
+) implements Serializable {
 
     public static CategoriaVeiculoServicoResponse fromEntity(CategoriaVeiculoServico entity) {
         if (entity == null) {
@@ -36,5 +38,5 @@ public record CategoriaVeiculoServicoResponse(
     public record CategoriaVeiculoResumoDTO(
             UUID id,
             String nome
-    ) {}
+    ) implements Serializable {}
 }

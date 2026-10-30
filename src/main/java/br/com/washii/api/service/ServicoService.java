@@ -82,6 +82,15 @@ public class ServicoService {
     }
 
     @Transactional
+    public List<CategoriaVeiculoServico> buscarCustomizacoesDeServicos(
+            UUID lavaJatoId, UUID servicoId) {
+        Servico servico = validarEObterServico(lavaJatoId, servicoId);
+
+        return catVeiculoServicoRepository.findAllByServico(servico);
+    }
+
+    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
+    @Transactional
     public void customizarServicoPorCategoriaServico(
             UUID lavaJatoId, UUID servicoId, List<CategoriaVeiculoServicoRequest> requestList
     ) {
@@ -105,6 +114,7 @@ public class ServicoService {
         catVeiculoServicoRepository.saveAll(listCustom);
     }
 
+    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void atualizarCustomizacao(UUID lavaJatoId, UUID servicoId, UUID precoId, CategoriaVeiculoServicoRequest request) {
         validarEObterServico(lavaJatoId, servicoId);
@@ -126,6 +136,7 @@ public class ServicoService {
         catVeiculoServicoRepository.save(customServico);
     }
 
+    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void deletarCustomizacao(UUID lavaJatoId, UUID servicoId, UUID precoId) {
         validarEObterServico(lavaJatoId, servicoId);
