@@ -166,7 +166,7 @@ public class AuthService {
     }
 
 
-    public void logout() {
-        // TODO adiconar funcionalidade de logout no sistema
+    public void logout(String accessToken) {
+        authProvider.logout(accessToken);
     }
 }

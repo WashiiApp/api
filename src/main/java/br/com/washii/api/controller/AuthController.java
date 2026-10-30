@@ -4,7 +4,6 @@ import br.com.washii.api.dto.request.CadastroClienteRequest;
 import br.com.washii.api.dto.request.CadastroLavaJatoRequest;
 import br.com.washii.api.dto.request.LoginRequest;
 import br.com.washii.api.dto.response.LoginResponse;
-import br.com.washii.api.model.Usuario;
 import br.com.washii.api.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -44,8 +44,9 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Usuario> logout(@RequestBody Usuario user) {
-        //TODO
-        return null;
+    public ResponseEntity<Void> logout(@RequestHeader("Authorization") String authorization) {
+        String accessToken = authorization.replaceFirst("(?i)^Bearer\\s+", "");
+        authService.logout(accessToken);
+        return ResponseEntity.noContent().build();
     }
 }

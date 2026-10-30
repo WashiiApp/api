@@ -97,6 +97,23 @@ public class SupabaseAuthProvider implements AuthProvider {
                 .toBodilessEntity();
     }
 
+    @Override
+    public void logout(String accessToken) {
+        try {
+            restClient
+                    .post()
+                    .uri(supabaseUrl + "/auth/v1/logout")
+                    .header("apikey", publicKey)
+                    .header("Authorization", "Bearer " + accessToken)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException exception) {
+            throw new ExternalServiceException("O provedor de autenticação não pôde concluir o logout.", exception);
+        } catch (RestClientException exception) {
+            throw new ExternalServiceException("Não foi possível conectar ao provedor de autenticação.", exception);
+        }
+    }
+
     private RuntimeException mapSignupException(RestClientResponseException exception) {
         return switch (exception.getStatusCode().value()) {
             case 400, 422 -> new ValidationException("Os dados de cadastro foram rejeitados pelo provedor de autenticação.");
