@@ -17,6 +17,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import br.com.washii.api.dto.response.HorariosDisponiveisResponse;
+import java.time.LocalDate;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -170,5 +173,21 @@ public class LavaJatoController {
     }
 
     // Operacionais e Consultas
+    @GetMapping("/{id}/horarios-disponiveis")
+    public ResponseEntity<HorariosDisponiveisResponse> buscarHorariosDisponiveis(
+            @PathVariable UUID id,
+            @RequestParam LocalDate data,
+            @RequestParam List<UUID> servicoIds,
+            @RequestParam UUID categoriaVeiculoId
+    ) {
+        HorariosDisponiveisResponse response =
+                lavaJatoService.buscarHorariosDisponiveis(
+                        id,
+                        data,
+                        servicoIds,
+                        categoriaVeiculoId
+                );
 
+        return ResponseEntity.ok(response);
+    }
 }
