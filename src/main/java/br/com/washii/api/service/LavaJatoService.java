@@ -22,6 +22,8 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -124,6 +126,7 @@ public class LavaJatoService {
     }
 
     // Expediente
+    @CacheEvict(value = "expedientesLavaJato", key = "#lavaJatoId")
     @Transactional
     public List<ExpedienteResponse> cadastrarExpediente(UUID lavaJatoId, List<ExpedienteRequest> expediente) {
         LavaJato lavaJato = buscarLavaJato(lavaJatoId);
@@ -137,6 +140,7 @@ public class LavaJatoService {
     }
 
 
+    @Cacheable(value = "expedientesLavaJato", key = "#lavaJatoId")
     @Transactional(readOnly = true)
     public List<ExpedienteResponse> buscarExpediente(UUID lavaJatoId) {
         buscarLavaJato(lavaJatoId);
@@ -145,6 +149,7 @@ public class LavaJatoService {
                 .toList();
     }
 
+    @CacheEvict(value = "expedientesLavaJato", key = "#lavaJatoId")
     @Transactional
     public List<ExpedienteResponse> atualizarExpediente(UUID lavaJatoId, List<ExpedienteRequest> expediente) {
         LavaJato lavaJato = buscarLavaJato(lavaJatoId);
@@ -158,6 +163,7 @@ public class LavaJatoService {
                 .toList();
     }
 
+    @CacheEvict(value = "expedientesLavaJato", key = "#lavaJatoId")
     @Transactional
     public void removerExpediente(UUID lavaJatoId, UUID expedienteId) {
         Disponibilidade disponibilidade = disponibilidadeRepository.findByIdAndLavaJato_Id(expedienteId, lavaJatoId)

@@ -2,6 +2,7 @@ package br.com.washii.api.dto.response;
 
 import br.com.washii.api.model.Disponibilidade;
 
+import java.io.Serializable;
 import java.time.LocalTime;
 import java.util.UUID;
 
@@ -11,7 +12,7 @@ public record ExpedienteResponse(
         String diaSemana,
         LocalTime horarioInicio,
         LocalTime horarioTermino
-) {
+) implements Serializable {
     public static ExpedienteResponse fromEntity(Disponibilidade disponibilidade) {
         return new ExpedienteResponse(
                 disponibilidade.getId(),

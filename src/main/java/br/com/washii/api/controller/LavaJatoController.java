@@ -52,7 +52,7 @@ public class LavaJatoController {
     }
 
     // Expediente
-    @PostMapping("/{id}/expediente")
+    @PostMapping("/{id}/expedientes")
     public ResponseEntity<List<ExpedienteResponse>> cadastrarExpediente(
             @PathVariable UUID id,
             @Valid @RequestBody List<@Valid ExpedienteRequest> expediente)
@@ -61,13 +61,13 @@ public class LavaJatoController {
                 .body(lavaJatoService.cadastrarExpediente(id, expediente));
     }
 
-    @GetMapping("/{id}/expediente")
+    @GetMapping("/{id}/expedientes")
     public ResponseEntity<List<ExpedienteResponse>> buscarExpediente(@PathVariable UUID id)
     {
         return ResponseEntity.ok(lavaJatoService.buscarExpediente(id));
     }
 
-    @PutMapping("/{id}/expediente")
+    @PutMapping("/{id}/expedientes")
     public ResponseEntity<List<ExpedienteResponse>> atualizarExpediente(
             @PathVariable UUID id,
             @Valid @RequestBody List<@Valid ExpedienteRequest> expediente)
@@ -75,7 +75,7 @@ public class LavaJatoController {
         return ResponseEntity.ok(lavaJatoService.atualizarExpediente(id, expediente));
     }
 
-    @DeleteMapping("/{id}/expediente/{expedienteId}")
+    @DeleteMapping("/{id}/expedientes/{expedienteId}")
     public ResponseEntity<Void> removerExpediente(
             @PathVariable UUID id,
             @PathVariable UUID expedienteId)
