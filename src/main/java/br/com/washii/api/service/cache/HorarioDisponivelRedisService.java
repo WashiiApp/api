@@ -3,6 +3,7 @@ package br.com.washii.api.service.cache;
 import br.com.washii.api.dto.response.HorariosDisponiveisResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import tools.jackson.databind.ObjectMapper;
@@ -18,7 +19,10 @@ import java.util.function.Supplier;
 public class HorarioDisponivelRedisService {
 
     private final StringRedisTemplate redisTemplate;
-    private final ObjectMapper objectMapper; // ObjectMapper do Jackson 3
+    private final ObjectMapper objectMapper;
+
+    @Value("${spring.cache.redis.time-to-live}")
+    private Duration cacheTtl;
 
     private static final String HORARIOS_CACHE_PREFIX = "horariosDisponiveis::";
 
@@ -46,7 +50,7 @@ public class HorarioDisponivelRedisService {
         // 3. Salva no Redis com TTL curto (ex: 3 minutos)
         try {
             String jsonToCache = objectMapper.writeValueAsString(response);
-            redisTemplate.opsForValue().set(cacheKey, jsonToCache, Duration.ofMinutes(3));
+            redisTemplate.opsForValue().set(cacheKey, jsonToCache, cacheTtl);
         } catch (Exception e) {
             log.warn("Falha ao gravar cache de horários para a chave {}: {}.", cacheKey, e.getMessage());
         }
