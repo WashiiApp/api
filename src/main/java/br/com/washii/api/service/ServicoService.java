@@ -5,7 +5,9 @@ import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
 import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
@@ -24,13 +26,16 @@ public class ServicoService {
     private final CategoriaVeiculoServicoRepository catVeiculoServicoRepository;
     private final LavaJatoRepository lavaJatoRepository;
 
+    // Cache local
+    private final Cache<UUID, CategoriaServico> categoriaServicoCache;
+    private final Cache<UUID, CategoriaVeiculo> categoriaVeiculoCache;
+
     @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void salvarServico(UUID lavaJatoId, CadastroServicoRequest request){
         LavaJato lavaJato = buscarLavaJatoOuLancar(lavaJatoId);
 
-        CategoriaServico categoria = catServicoRepository.findById(request.categoriaServicoId())
-                .orElseThrow(() -> new IllegalArgumentException("Categoria de serviço não encontrada com o id = " + request.categoriaServicoId()));
+        CategoriaServico categoria = buscarCategoriaServicoOuLancar(request.categoriaServicoId());
 
         Servico servico = new Servico();
         servico.setCategoriaServico(categoria);
@@ -63,8 +68,7 @@ public class ServicoService {
     public void atualizarServico(UUID lavaJatoId, UUID servicoId, CadastroServicoRequest request) {
         Servico servico = validarEObterServico(lavaJatoId, servicoId);
 
-        CategoriaServico categoria = catServicoRepository.findById(request.categoriaServicoId())
-                .orElseThrow(() -> new IllegalArgumentException("Categoria de serviço não encontrada com o id = " + request.categoriaServicoId()));
+        CategoriaServico categoria = buscarCategoriaServicoOuLancar(request.categoriaServicoId());
 
         servico.setCategoriaServico(categoria);
         servico.setNome(request.nome());
@@ -98,8 +102,7 @@ public class ServicoService {
 
         List<CategoriaVeiculoServico> listCustom = requestList.stream()
                 .map(request -> {
-                    CategoriaVeiculo catVeiculo = catVeiculoRepository.findById(request.categoriaVeiculoId())
-                            .orElseThrow(() -> new IllegalArgumentException("Categoria de veículo não encontrada com o id = " + request.categoriaVeiculoId()));
+                    CategoriaVeiculo catVeiculo = buscarCategoriaVeiculoOuLancar(request.categoriaVeiculoId());
 
                     CategoriaVeiculoServico customServico = new CategoriaVeiculoServico();
                     customServico.setCategoriaVeiculo(catVeiculo);
@@ -126,8 +129,7 @@ public class ServicoService {
             throw new IllegalArgumentException("A customização informada não pertence ao serviço especificado");
         }
 
-        CategoriaVeiculo catVeiculo = catVeiculoRepository.findById(request.categoriaVeiculoId())
-                .orElseThrow(() -> new IllegalArgumentException("Categoria de veículo não encontrada com o id = " + request.categoriaVeiculoId()));
+        CategoriaVeiculo catVeiculo = buscarCategoriaVeiculoOuLancar(request.categoriaVeiculoId());
 
         customServico.setCategoriaVeiculo(catVeiculo);
         customServico.setDuracao(request.duracao());
@@ -159,6 +161,22 @@ public class ServicoService {
                         new IllegalArgumentException(
                                 "Lava Jato não encontrado com o id = " + lavaJatoId
                         ));
+    }
+
+    private @NonNull CategoriaServico buscarCategoriaServicoOuLancar(UUID categoriaServicoId) {
+        return categoriaServicoCache.get(categoriaServicoId, uuid ->
+            catServicoRepository.findById(uuid)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Categoria de serviço não encontrada com o id = " + uuid))
+        );
+    }
+
+    private @NonNull CategoriaVeiculo buscarCategoriaVeiculoOuLancar(UUID categoriaVeiculoId) {
+        return categoriaVeiculoCache.get(categoriaVeiculoId, uuid ->
+            catVeiculoRepository.findById(uuid)
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "Categoria de veiculo não encontrada com o id = " + uuid))
+        );
     }
 
     private Servico validarEObterServico(UUID lavaJatoId, UUID servicoId) {
