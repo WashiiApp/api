@@ -20,7 +20,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ServicoCacheService {
+public class ServicoRedisService {
 
     @Value("${spring.cache.redis.time-to-live}")
     private Duration cacheTtl;

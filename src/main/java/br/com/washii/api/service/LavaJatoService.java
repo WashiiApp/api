@@ -17,7 +17,7 @@ import br.com.washii.api.repository.DiasSemanaRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.TelefoneRepository;
 import br.com.washii.api.repository.UsuarioTelefoneRepository;
-import br.com.washii.api.service.cache.ExpedienteCacheService;
+import br.com.washii.api.service.cache.ExpedienteRedisService;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -64,7 +64,7 @@ public class LavaJatoService {
     private final UsuarioTelefoneRepository usuarioTelefoneRepository;
 
     // Serviço de cache Redis manual para expedientes
-    private final ExpedienteCacheService expedienteCacheService;
+    private final ExpedienteRedisService expedienteCache;
 
     private static final int INTERVALO_SUGESTOES_MINUTOS = 30;
     private static final ZoneId ZONA_HORARIA = ZoneId.of("America/Sao_Paulo");
@@ -168,12 +168,12 @@ public class LavaJatoService {
                 .map(ExpedienteResponse::fromEntity)
                 .toList();
 
-        expedienteCacheService.invalidarCache(lavaJatoId);
+        expedienteCache.invalidarCache(lavaJatoId);
         return response;
     }
 
     public List<ExpedienteResponse> buscarExpediente(UUID lavaJatoId) {
-        return expedienteCacheService.buscarExpediente(lavaJatoId);
+        return expedienteCache.buscarExpediente(lavaJatoId);
     }
 
     @Transactional
@@ -188,7 +188,7 @@ public class LavaJatoService {
                 .map(ExpedienteResponse::fromEntity)
                 .toList();
 
-        expedienteCacheService.invalidarCache(lavaJatoId);
+        expedienteCache.invalidarCache(lavaJatoId);
         return response;
     }
 
@@ -198,7 +198,7 @@ public class LavaJatoService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Expediente não encontrado para o estabelecimento informado."));
         disponibilidadeRepository.delete(disponibilidade);
-        expedienteCacheService.invalidarCache(lavaJatoId);
+        expedienteCache.invalidarCache(lavaJatoId);
     }
 
     private LavaJato buscarLavaJato(UUID id) {

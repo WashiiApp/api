@@ -20,7 +20,7 @@ import java.util.UUID;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ExpedienteCacheService {
+public class ExpedienteRedisService {
 
     private final DisponibilidadeRepository disponibilidadeRepository;
     private final LavaJatoRepository lavaJatoRepository;

@@ -5,7 +5,7 @@ import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
 import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
-import br.com.washii.api.service.cache.ServicoCacheService;
+import br.com.washii.api.service.cache.ServicoRedisService;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -26,7 +26,7 @@ public class ServicoService {
     private final LavaJatoRepository lavaJatoRepository;
 
     // Serviço de cache Redis manual
-    private final ServicoCacheService servicoCacheService;
+    private final ServicoRedisService servicoCache;
 
     // Cache local (Caffeine)
     private final Cache<UUID, CategoriaServico> categoriaServicoCache;
@@ -45,12 +45,12 @@ public class ServicoService {
         servico.setLavaJato(lavaJato);
 
         servicoRepository.save(servico);
-        servicoCacheService.invalidarCache(lavaJatoId);
+        servicoCache.invalidarCache(lavaJatoId);
     }
 
     public List<ServicoResponse> buscarServicosPorLavaJato(UUID lavaJatoId) {
         // Delega para a camada de cache Redis
-        return servicoCacheService.buscarServicosPorLavaJato(lavaJatoId);
+        return servicoCache.buscarServicosPorLavaJato(lavaJatoId);
     }
 
     @Transactional(readOnly = true)
@@ -68,7 +68,7 @@ public class ServicoService {
         servico.setDescricao(request.descricao());
 
         servicoRepository.save(servico);
-        servicoCacheService.invalidarCache(lavaJatoId);
+        servicoCache.invalidarCache(lavaJatoId);
     }
 
     @Transactional
@@ -76,7 +76,7 @@ public class ServicoService {
         Servico servico = validarEObterServico(lavaJatoId, servicoId);
         servico.setAtivo(false);
         servicoRepository.save(servico);
-        servicoCacheService.invalidarCache(lavaJatoId);
+        servicoCache.invalidarCache(lavaJatoId);
     }
 
     @Transactional(readOnly = true)
@@ -107,7 +107,7 @@ public class ServicoService {
                 .toList();
 
         catVeiculoServicoRepository.saveAll(listCustom);
-        servicoCacheService.invalidarCache(lavaJatoId);
+        servicoCache.invalidarCache(lavaJatoId);
     }
 
     @Transactional
@@ -128,7 +128,7 @@ public class ServicoService {
         customServico.setPreco(request.preco());
 
         catVeiculoServicoRepository.save(customServico);
-        servicoCacheService.invalidarCache(lavaJatoId);
+        servicoCache.invalidarCache(lavaJatoId);
     }
 
     @Transactional
@@ -143,7 +143,7 @@ public class ServicoService {
         }
 
         catVeiculoServicoRepository.delete(customServico);
-        servicoCacheService.invalidarCache(lavaJatoId);
+        servicoCache.invalidarCache(lavaJatoId);
     }
 
     // --- MÉTODOS AUXILIARES PRIVADOS ---
