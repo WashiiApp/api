@@ -17,6 +17,7 @@ import br.com.washii.api.repository.DiasSemanaRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.TelefoneRepository;
 import br.com.washii.api.repository.UsuarioTelefoneRepository;
+import br.com.washii.api.service.cache.ExpedienteCacheService;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -24,8 +25,6 @@ import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,9 +50,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;
-
-
 import java.util.List;
 import java.util.UUID;
 
@@ -67,6 +63,9 @@ public class LavaJatoService {
     private final TelefoneRepository telefoneRepository;
     private final UsuarioTelefoneRepository usuarioTelefoneRepository;
 
+    // Serviço de cache Redis manual para expedientes
+    private final ExpedienteCacheService expedienteCacheService;
+
     private static final int INTERVALO_SUGESTOES_MINUTOS = 30;
     private static final ZoneId ZONA_HORARIA = ZoneId.of("America/Sao_Paulo");
 
@@ -75,23 +74,20 @@ public class LavaJatoService {
     private final CategoriaVeiculoRepository categoriaVeiculoRepository;
     private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
 
-    // Cache local
+    // Cache local (Caffeine)
     private final Cache<UUID, DiasSemana> diasSemanaCache;
     private final Cache<UUID, CategoriaVeiculo> categoriaVeiculoCache;
 
     // Gestão cadastral do sistema
-    @Transactional
+    @Transactional(readOnly = true)
     public LavaJatoResponse buscarPorId(UUID id){
-        LavaJato lavaJato = lavaJatoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
-
-       return LavaJatoResponse.fromEntity(lavaJato);
+        LavaJato lavaJato = buscarLavaJato(id);
+        return LavaJatoResponse.fromEntity(lavaJato);
     }
 
     @Transactional
     public void atualizar(UUID id, AtualizacaoLavaJatoRequest request) {
-        LavaJato lavaJato = lavaJatoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
+        LavaJato lavaJato = buscarLavaJato(id);
 
         lavaJato.setFotoPerfil(request.fotoPerfil());
         lavaJato.setRazaoSocial(request.razaoSocial());
@@ -119,7 +115,6 @@ public class LavaJatoService {
                     new Coordinate(request.longitude(), request.latitude())
             );
 
-            // Atribui a nova instância diretamente à entidade
             lavaJato.setCoordenadas(point);
         }
 
@@ -156,16 +151,12 @@ public class LavaJatoService {
 
     @Transactional
     public void deletar(UUID id) {
-        LavaJato lavaJato = lavaJatoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
-
+        LavaJato lavaJato = buscarLavaJato(id);
         lavaJato.setAtivo(false);
-
         lavaJatoRepository.save(lavaJato);
     }
 
     // Expediente
-    @CacheEvict(value = "expedientesLavaJato", key = "#lavaJatoId")
     @Transactional
     public List<ExpedienteResponse> cadastrarExpediente(UUID lavaJatoId, List<ExpedienteRequest> expediente) {
         LavaJato lavaJato = buscarLavaJato(lavaJatoId);
@@ -173,22 +164,18 @@ public class LavaJatoService {
                 .map(item -> criarDisponibilidade(lavaJato, item))
                 .toList();
 
-        return disponibilidadeRepository.saveAll(disponibilidades).stream()
+        List<ExpedienteResponse> response = disponibilidadeRepository.saveAll(disponibilidades).stream()
                 .map(ExpedienteResponse::fromEntity)
                 .toList();
+
+        expedienteCacheService.invalidarCache(lavaJatoId);
+        return response;
     }
 
-
-    @Cacheable(value = "expedientesLavaJato", key = "#lavaJatoId")
-    @Transactional(readOnly = true)
     public List<ExpedienteResponse> buscarExpediente(UUID lavaJatoId) {
-        buscarLavaJato(lavaJatoId);
-        return disponibilidadeRepository.findAllByLavaJato_IdOrderByDiasSemana_Id(lavaJatoId).stream()
-                .map(ExpedienteResponse::fromEntity)
-                .toList();
+        return expedienteCacheService.buscarExpediente(lavaJatoId);
     }
 
-    @CacheEvict(value = "expedientesLavaJato", key = "#lavaJatoId")
     @Transactional
     public List<ExpedienteResponse> atualizarExpediente(UUID lavaJatoId, List<ExpedienteRequest> expediente) {
         LavaJato lavaJato = buscarLavaJato(lavaJatoId);
@@ -197,18 +184,21 @@ public class LavaJatoService {
                 .toList();
 
         disponibilidadeRepository.deleteAllByLavaJato_Id(lavaJatoId);
-        return disponibilidadeRepository.saveAll(disponibilidades).stream()
+        List<ExpedienteResponse> response = disponibilidadeRepository.saveAll(disponibilidades).stream()
                 .map(ExpedienteResponse::fromEntity)
                 .toList();
+
+        expedienteCacheService.invalidarCache(lavaJatoId);
+        return response;
     }
 
-    @CacheEvict(value = "expedientesLavaJato", key = "#lavaJatoId")
     @Transactional
     public void removerExpediente(UUID lavaJatoId, UUID expedienteId) {
         Disponibilidade disponibilidade = disponibilidadeRepository.findByIdAndLavaJato_Id(expedienteId, lavaJatoId)
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Expediente não encontrado para o estabelecimento informado."));
         disponibilidadeRepository.delete(disponibilidade);
+        expedienteCacheService.invalidarCache(lavaJatoId);
     }
 
     private LavaJato buscarLavaJato(UUID id) {
@@ -449,8 +439,6 @@ public class LavaJatoService {
     }
 
     private @NonNull DiasSemana buscarDiasSemanaOuLancar(UUID diaSemanaId) {
-
-        //Verifica se o valor está no cache, se não, busca no repository e guarda no cache
         return diasSemanaCache.get(diaSemanaId, id ->
                 diasSemanaRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException(
@@ -461,8 +449,8 @@ public class LavaJatoService {
     private @NonNull CategoriaVeiculo buscarCategoriaVeiculoOuLancar(UUID categoriaVeiculoId) {
         return categoriaVeiculoCache.get(categoriaVeiculoId, id ->
                 categoriaVeiculoRepository.findById(id)
-                    .orElseThrow(() -> new ResourceNotFoundException(
-                            "Categoria de veículo não encontrada."))
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Categoria de veículo não encontrada."))
         );
     }
 }
