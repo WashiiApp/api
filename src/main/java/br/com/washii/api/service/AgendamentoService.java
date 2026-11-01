@@ -1,12 +1,15 @@
 package br.com.washii.api.service;
 
 import br.com.washii.api.dto.request.AgendamentoRequest;
+import br.com.washii.api.dto.response.HorariosDisponiveisResponse;
 import br.com.washii.api.exception.BusinessException;
 import br.com.washii.api.exception.ResourceNotFoundException;
 import br.com.washii.api.exception.ValidationException;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
 import br.com.washii.api.repository.specs.AgendamentoSpecs;
+import br.com.washii.api.service.cache.ExpedienteRedisService;
+import br.com.washii.api.service.cache.HorarioDisponivelRedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,10 @@ public class AgendamentoService {
     private final VeiculoRepository veiculoRepository;
     private final ServicoRepository servicoRepository;
     private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
+    private final LavaJatoService lavaJatoService;
+    // cache
+    private final ExpedienteRedisService expedienteRedisService;
+    private final HorarioDisponivelRedisService horarioDisponivelCache;
 
     @Transactional
     public Agendamento criar(UUID clienteId, AgendamentoRequest request) {
@@ -52,6 +59,10 @@ public class AgendamentoService {
             throw new ValidationException("A data e hora do agendamento devem ser futuras.");
         }
 
+        if (request.servicoIds() == null || request.servicoIds().isEmpty()) {
+            throw new ValidationException("Informe pelo menos um serviço.");
+        }
+
         if (new HashSet<>(request.servicoIds()).size() != request.servicoIds().size()) {
             throw new ValidationException("Não é permitido informar serviços duplicados.");
         }
@@ -60,10 +71,11 @@ public class AgendamentoService {
         if (servicos.size() != request.servicoIds().size()) {
             throw new ResourceNotFoundException("Um ou mais serviços não foram encontrados.");
         }
+
         BigDecimal total = BigDecimal.ZERO;
         long duracaoMinutos = 0;
-        for (Servico servico : servicos) {
 
+        for (Servico servico : servicos) {
             if (!servico.isAtivo()) {
                 throw new ValidationException("O serviço informado está inativo.");
             }
@@ -73,35 +85,34 @@ public class AgendamentoService {
             }
 
             if (!Objects.equals(servico.getLavaJato().getId(), lavaJato.getId())) {
-                throw new ValidationException(
-                        "O serviço não pertence ao lava-jato informado."
-                );
+                throw new ValidationException("O serviço não pertence ao lava-jato informado.");
             }
 
             CategoriaVeiculoServico precoTempo = categoriaVeiculoServicoRepository
                     .findByCategoriaVeiculoAndServico(veiculo.getCategoriaVeiculo(), servico)
                     .orElseThrow(() -> new ValidationException("Há serviço indisponível para a categoria deste veículo."));
+
             total = total.add(precoTempo.getPreco());
             duracaoMinutos = Math.addExact(duracaoMinutos, Duration.between(LocalTime.MIDNIGHT, precoTempo.getDuracao()).toMinutes());
         }
+
         if (duracaoMinutos < 1 || duracaoMinutos >= 24 * 60) {
             throw new ValidationException("A duração total calculada para o agendamento é inválida.");
         }
 
-        LocalDateTime inicio = request.data().atTime(request.hora());
-        LocalDateTime fim = inicio.plusMinutes(duracaoMinutos);
+        HorariosDisponiveisResponse horariosDisponiveis = lavaJatoService.buscarHorariosDisponiveis(
+                lavaJato.getId(),
+                request.data(),
+                request.servicoIds(),
+                veiculo.getCategoriaVeiculo().getId()
+        );
 
-        List<UUID> idsAtivos = agendamentoRepository.findAtivosDoLavaJatoNaData(
-                lavaJato.getId(), request.data(), StatusAgendamento.AGENDADO.name());
-
-        List<Agendamento> ativos = agendamentoRepository.findAllById(idsAtivos);
-
-        long simultaneos = ativos.stream().filter(a -> sobrepoe(inicio, fim, a)).count();
-
-        if (simultaneos >= lavaJato.getFluxoSimultaneo()) {
-            throw new BusinessException("Não há capacidade disponível para o horário solicitado.");
+        // Verifica se o horário exato escolhido pelo cliente consta na lista gerada/cacheada
+        if (!horariosDisponiveis.horariosDisponiveis().contains(request.hora())) {
+            throw new BusinessException("O horário solicitado não está disponível ou excede a capacidade do estabelecimento.");
         }
 
+        // Cria e salva o agendamento
         Agendamento agendamento = new Agendamento();
         agendamento.setVeiculo(veiculo);
         agendamento.setData(request.data());
@@ -109,27 +120,20 @@ public class AgendamentoService {
         agendamento.setPrecoTotal(total);
         agendamento.setDuracaoTotal(LocalTime.MIDNIGHT.plusMinutes(duracaoMinutos));
         agendamento.setStatusAgendamento(StatusAgendamento.AGENDADO);
+
         Agendamento salvo = agendamentoRepository.save(agendamento);
+
         agendamentoServicoRepository.saveAll(servicos.stream()
                 .map(servico -> new AgendamentoServico(null, salvo, servico, null)).toList());
-        return salvo;
-    }
 
-    private boolean sobrepoe(LocalDateTime inicio, LocalDateTime fim, Agendamento existente) {
-        long minutos = agendamentoServicoRepository.findByAgendamento(existente).stream()
-                .map(AgendamentoServico::getServico)
-                .map(s -> categoriaVeiculoServicoRepository.findByCategoriaVeiculoAndServico(
-                        existente.getVeiculo().getCategoriaVeiculo(), s).orElse(null))
-                .filter(Objects::nonNull)
-                .mapToLong(p -> Duration.between(LocalTime.MIDNIGHT, p.getDuracao()).toMinutes()).sum();
-        LocalDateTime inicioExistente = existente.getData().atTime(existente.getHora());
-        LocalDateTime fimExistente = inicioExistente.plusMinutes(minutos);
-        return inicio.isBefore(fimExistente) && inicioExistente.isBefore(fim);
+        horarioDisponivelCache.invalidarCache(lavaJato.getId(), request.data());
+
+        return salvo;
     }
 
     @Transactional
     public void cancelarPeloCliente(UUID agendamentoId, UUID clienteId) {
-        Agendamento agendamento = buscar(agendamentoId);
+        Agendamento agendamento = buscarAgendamentoOuLancar(agendamentoId);
 
         UUID id = agendamento.getVeiculo().getCliente().getId();
 
@@ -145,11 +149,19 @@ public class AgendamentoService {
             throw new BusinessException("Somente agendamentos ainda agendados podem ser cancelados pelo cliente.");
         }
         agendamento.setStatusAgendamento(StatusAgendamento.CANCELADO);
+
+        UUID lavaJatoId = agendamento.getAgendamentoServicos()
+                .getFirst()
+                .getServico()
+                .getLavaJato()
+                .getId();
+
+        horarioDisponivelCache.invalidarCache(lavaJatoId, agendamento.getData());
     }
 
     @Transactional
     public void atualizarStatus(UUID agendamentoId, UUID lavaJatoId, StatusAgendamento novoStatus) {
-        Agendamento agendamento = buscar(agendamentoId);
+        Agendamento agendamento = buscarAgendamentoOuLancar(agendamentoId);
         boolean pertence = agendamentoServicoRepository.findByAgendamento(agendamento).stream()
                 .anyMatch(as -> {
 
@@ -165,11 +177,23 @@ public class AgendamentoService {
                 && (novoStatus == StatusAgendamento.CONCLUIDO || novoStatus == StatusAgendamento.CANCELADO);
         if (!transicaoValida) throw new BusinessException("Transição de status não permitida.");
         agendamento.setStatusAgendamento(novoStatus);
+
+        horarioDisponivelCache.invalidarCache(lavaJatoId, agendamento.getData());
     }
 
-    private Agendamento buscar(UUID id) {
-        return agendamentoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado."));
+    @Transactional(readOnly = true)
+    public Agendamento buscarAgendamento(UUID usuarioId, UUID agendamentoId) {
+        // Busca o agendamento ou lança exceção se não existir
+        Agendamento agendamento = buscarAgendamentoOuLancar(agendamentoId);
+
+        // Valida se o usuario informado (Cliente ou Lava Jato) realmente tem permissão para ver este agendamento
+        boolean pertenceAoUsuario = validarSeAgendamentoPertenceAoUsuario(agendamento, usuarioId);
+
+        if (!pertenceAoUsuario) {
+            throw new IllegalArgumentException("O agendamento informado não pertence ao usuário especificado.");
+        }
+
+        return agendamento;
     }
 
     @Transactional(readOnly = true)
@@ -191,19 +215,9 @@ public class AgendamentoService {
         return agendamentoRepository.findAll(specs);
     }
 
-    public Agendamento buscar(UUID usuarioId, UUID agendamentoId) {
-        // Busca o agendamento ou lança exceção se não existir
-        Agendamento agendamento = agendamentoRepository.findById(agendamentoId)
-                .orElseThrow(() -> new IllegalArgumentException("Agendamento não encontrado com o id = " + agendamentoId));
-
-        // Valida se o usuario informado (Cliente ou Lava Jato) realmente tem permissão para ver este agendamento
-        boolean pertenceAoUsuario = validarSeAgendamentoPertenceAoUsuario(agendamento, usuarioId);
-
-        if (!pertenceAoUsuario) {
-            throw new IllegalArgumentException("O agendamento informado não pertence ao usuário especificado.");
-        }
-
-        return agendamento;
+    private Agendamento buscarAgendamentoOuLancar(UUID id) {
+        return agendamentoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Agendamento não encontrado."));
     }
 
     // Método auxiliar privado para reutilizar a validação de vínculo (Cliente ou Lava Jato)

@@ -18,6 +18,7 @@ import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.TelefoneRepository;
 import br.com.washii.api.repository.UsuarioTelefoneRepository;
 import br.com.washii.api.service.cache.ExpedienteRedisService;
+import br.com.washii.api.service.cache.HorarioDisponivelRedisService;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -63,9 +64,6 @@ public class LavaJatoService {
     private final TelefoneRepository telefoneRepository;
     private final UsuarioTelefoneRepository usuarioTelefoneRepository;
 
-    // Serviço de cache Redis manual para expedientes
-    private final ExpedienteRedisService expedienteCache;
-
     private static final int INTERVALO_SUGESTOES_MINUTOS = 30;
     private static final ZoneId ZONA_HORARIA = ZoneId.of("America/Sao_Paulo");
 
@@ -73,6 +71,10 @@ public class LavaJatoService {
     private final ServicoRepository servicoRepository;
     private final CategoriaVeiculoRepository categoriaVeiculoRepository;
     private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
+
+    // Serviço de cache Redis manual para expedientes
+    private final ExpedienteRedisService expedienteCache;
+    private final HorarioDisponivelRedisService horarioDisponivelCache;
 
     // Cache local (Caffeine)
     private final Cache<UUID, DiasSemana> diasSemanaCache;
@@ -229,13 +231,28 @@ public class LavaJatoService {
             List<UUID> servicoIds,
             UUID categoriaVeiculoId
     ) {
-        LavaJato lavaJato = buscarLavaJato(lavaJatoId);
-
         if (data == null) data = LocalDate.now();
+        final LocalDate dataConsulta = data;
 
-        if (data.isBefore(LocalDate.now(ZONA_HORARIA))) {
+        if (dataConsulta.isBefore(LocalDate.now(ZONA_HORARIA))) {
             throw new ValidationException("A data consultada não pode estar no passado.");
         }
+
+        // Verifica primeiro no cache ou calcula
+        return horarioDisponivelCache.buscarOuCalcular(
+                lavaJatoId,
+                dataConsulta,
+                () -> calcularHorariosDisponiveis(lavaJatoId, dataConsulta, servicoIds, categoriaVeiculoId)
+        );
+    }
+
+    private HorariosDisponiveisResponse calcularHorariosDisponiveis(
+            UUID lavaJatoId,
+            LocalDate dataConsulta,
+            List<UUID> servicoIds,
+            UUID categoriaVeiculoId
+    ) {
+        LavaJato lavaJato = buscarLavaJato(lavaJatoId);
 
         if (servicoIds == null || servicoIds.isEmpty()) {
             throw new ValidationException("Informe pelo menos um serviço.");
@@ -285,7 +302,7 @@ public class LavaJatoService {
             throw new ValidationException("A duração total calculada é inválida.");
         }
 
-        String diaCurto = nomeCurto(data.getDayOfWeek());
+        String diaCurto = nomeCurto(dataConsulta.getDayOfWeek());
 
         List<Disponibilidade> expedientesDoDia =
                 disponibilidadeRepository
@@ -299,7 +316,7 @@ public class LavaJatoService {
         List<Agendamento> agendamentos =
                 agendamentoRepository.buscarAgendamentosAtivosDoLavaJatoNaData(
                         lavaJatoId,
-                        data,
+                        dataConsulta,
                         StatusAgendamento.AGENDADO
                 );
 
@@ -314,7 +331,7 @@ public class LavaJatoService {
                  !inicio.isAfter(ultimoInicio);
                  inicio = inicio.plusMinutes(INTERVALO_SUGESTOES_MINUTOS)) {
 
-                LocalDateTime inicioAtendimento = data.atTime(inicio);
+                LocalDateTime inicioAtendimento = dataConsulta.atTime(inicio);
                 LocalDateTime fimAtendimento =
                         inicioAtendimento.plusMinutes(duracaoTotalMinutos);
 
@@ -340,7 +357,7 @@ public class LavaJatoService {
 
         return new HorariosDisponiveisResponse(
                 lavaJatoId,
-                data,
+                dataConsulta,
                 duracaoTotalMinutos,
                 horariosOrdenados
         );
