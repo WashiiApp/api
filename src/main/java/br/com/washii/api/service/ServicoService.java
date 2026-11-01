@@ -5,11 +5,10 @@ import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
 import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
+import br.com.washii.api.service.cache.ServicoCacheService;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,15 +25,16 @@ public class ServicoService {
     private final CategoriaVeiculoServicoRepository catVeiculoServicoRepository;
     private final LavaJatoRepository lavaJatoRepository;
 
-    // Cache local
+    // Serviço de cache Redis manual
+    private final ServicoCacheService servicoCacheService;
+
+    // Cache local (Caffeine)
     private final Cache<UUID, CategoriaServico> categoriaServicoCache;
     private final Cache<UUID, CategoriaVeiculo> categoriaVeiculoCache;
 
-    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void salvarServico(UUID lavaJatoId, CadastroServicoRequest request){
         LavaJato lavaJato = buscarLavaJatoOuLancar(lavaJatoId);
-
         CategoriaServico categoria = buscarCategoriaServicoOuLancar(request.categoriaServicoId());
 
         Servico servico = new Servico();
@@ -45,17 +45,12 @@ public class ServicoService {
         servico.setLavaJato(lavaJato);
 
         servicoRepository.save(servico);
+        servicoCacheService.invalidarCache(lavaJatoId);
     }
 
-    @Cacheable(value = "servicosLavaJato", key = "#lavaJatoId")
-    @Transactional(readOnly = true)
     public List<ServicoResponse> buscarServicosPorLavaJato(UUID lavaJatoId) {
-        LavaJato lavaJato = buscarLavaJatoOuLancar(lavaJatoId);
-        List<Servico> servicos = servicoRepository.findAllByLavaJato(lavaJato);
-
-        return servicos.stream()
-                .map(ServicoResponse::fromEntity)
-                .toList();
+        // Delega para a camada de cache Redis
+        return servicoCacheService.buscarServicosPorLavaJato(lavaJatoId);
     }
 
     @Transactional(readOnly = true)
@@ -63,11 +58,9 @@ public class ServicoService {
         return validarEObterServico(lavaJatoId, servicoId);
     }
 
-    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void atualizarServico(UUID lavaJatoId, UUID servicoId, CadastroServicoRequest request) {
         Servico servico = validarEObterServico(lavaJatoId, servicoId);
-
         CategoriaServico categoria = buscarCategoriaServicoOuLancar(request.categoriaServicoId());
 
         servico.setCategoriaServico(categoria);
@@ -75,25 +68,24 @@ public class ServicoService {
         servico.setDescricao(request.descricao());
 
         servicoRepository.save(servico);
+        servicoCacheService.invalidarCache(lavaJatoId);
     }
 
-    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void deletarServico(UUID lavaJatoId, UUID servicoId) {
         Servico servico = validarEObterServico(lavaJatoId, servicoId);
         servico.setAtivo(false);
         servicoRepository.save(servico);
+        servicoCacheService.invalidarCache(lavaJatoId);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CategoriaVeiculoServico> buscarCustomizacoesDeServicos(
             UUID lavaJatoId, UUID servicoId) {
         Servico servico = validarEObterServico(lavaJatoId, servicoId);
-
         return catVeiculoServicoRepository.findAllByServico(servico);
     }
 
-    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void customizarServicoPorCategoriaServico(
             UUID lavaJatoId, UUID servicoId, List<CategoriaVeiculoServicoRequest> requestList
@@ -115,9 +107,9 @@ public class ServicoService {
                 .toList();
 
         catVeiculoServicoRepository.saveAll(listCustom);
+        servicoCacheService.invalidarCache(lavaJatoId);
     }
 
-    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void atualizarCustomizacao(UUID lavaJatoId, UUID servicoId, UUID precoId, CategoriaVeiculoServicoRequest request) {
         validarEObterServico(lavaJatoId, servicoId);
@@ -136,9 +128,9 @@ public class ServicoService {
         customServico.setPreco(request.preco());
 
         catVeiculoServicoRepository.save(customServico);
+        servicoCacheService.invalidarCache(lavaJatoId);
     }
 
-    @CacheEvict(value = "servicosLavaJato", key = "#lavaJatoId")
     @Transactional
     public void deletarCustomizacao(UUID lavaJatoId, UUID servicoId, UUID precoId) {
         validarEObterServico(lavaJatoId, servicoId);
@@ -151,31 +143,27 @@ public class ServicoService {
         }
 
         catVeiculoServicoRepository.delete(customServico);
+        servicoCacheService.invalidarCache(lavaJatoId);
     }
 
     // --- MÉTODOS AUXILIARES PRIVADOS ---
 
     private LavaJato buscarLavaJatoOuLancar(UUID lavaJatoId) {
         return lavaJatoRepository.findById(lavaJatoId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Lava Jato não encontrado com o id = " + lavaJatoId
-                        ));
+                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
     }
 
     private @NonNull CategoriaServico buscarCategoriaServicoOuLancar(UUID categoriaServicoId) {
         return categoriaServicoCache.get(categoriaServicoId, uuid ->
-            catServicoRepository.findById(uuid)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Categoria de serviço não encontrada com o id = " + uuid))
+                catServicoRepository.findById(uuid)
+                        .orElseThrow(() -> new IllegalArgumentException("Categoria de serviço não encontrada com o id = " + uuid))
         );
     }
 
     private @NonNull CategoriaVeiculo buscarCategoriaVeiculoOuLancar(UUID categoriaVeiculoId) {
         return categoriaVeiculoCache.get(categoriaVeiculoId, uuid ->
-            catVeiculoRepository.findById(uuid)
-                    .orElseThrow(() -> new IllegalArgumentException(
-                            "Categoria de veiculo não encontrada com o id = " + uuid))
+                catVeiculoRepository.findById(uuid)
+                        .orElseThrow(() -> new IllegalArgumentException("Categoria de veiculo não encontrada com o id = " + uuid))
         );
     }
 
@@ -183,9 +171,7 @@ public class ServicoService {
         LavaJato lavaJato = buscarLavaJatoOuLancar(lavaJatoId);
 
         Servico servico = servicoRepository.findById(servicoId)
-                .orElseThrow(() -> new IllegalArgumentException(
-                        "Serviço não encontrado com o id = " + servicoId
-                ));
+                .orElseThrow(() -> new IllegalArgumentException("Serviço não encontrado com o id = " + servicoId));
 
         if (Boolean.FALSE.equals(servicoRepository.existsByIdAndLavaJato(servicoId, lavaJato))) {
             throw new IllegalArgumentException("O serviço não pertence ao lava jato informado");

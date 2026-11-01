@@ -21,14 +21,4 @@ import java.time.Duration;
 @EnableCaching
 public class CacheConfig {
 
-    @Bean(name = "redisCacheManager")
-    public CacheManager redisCacheManager(RedisConnectionFactory connectionFactory) {
-        RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(Duration.ofMinutes(10)) // Tempo padrão de expiração no Redis
-                .disableCachingNullValues();
-
-        return RedisCacheManager.builder(connectionFactory)
-                .cacheDefaults(defaultCacheConfig)
-                .build();
-    }
 }

@@ -184,7 +184,7 @@ public class LavaJatoController {
     @GetMapping("/{id}/horarios-disponiveis")
     public ResponseEntity<HorariosDisponiveisResponse> buscarHorariosDisponiveis(
             @PathVariable UUID id,
-            @RequestParam LocalDate data,
+            @RequestParam(required = false) LocalDate data,
             @RequestParam List<UUID> servicoIds,
             @RequestParam UUID categoriaVeiculoId
     ) {

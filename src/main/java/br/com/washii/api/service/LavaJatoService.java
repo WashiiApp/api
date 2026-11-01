@@ -77,6 +77,7 @@ public class LavaJatoService {
 
     // Cache local
     private final Cache<UUID, DiasSemana> diasSemanaCache;
+    private final Cache<UUID, CategoriaVeiculo> categoriaVeiculoCache;
 
     // Gestão cadastral do sistema
     @Transactional
@@ -240,7 +241,9 @@ public class LavaJatoService {
     ) {
         LavaJato lavaJato = buscarLavaJato(lavaJatoId);
 
-        if (data == null || data.isBefore(LocalDate.now(ZONA_HORARIA))) {
+        if (data == null) data = LocalDate.now();
+
+        if (data.isBefore(LocalDate.now(ZONA_HORARIA))) {
             throw new ValidationException("A data consultada não pode estar no passado.");
         }
 
@@ -252,10 +255,7 @@ public class LavaJatoService {
             throw new ValidationException("Não informe serviços duplicados.");
         }
 
-        CategoriaVeiculo categoria = categoriaVeiculoRepository.findById(categoriaVeiculoId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Categoria de veículo não encontrada."
-                ));
+        CategoriaVeiculo categoria = buscarCategoriaVeiculoOuLancar(categoriaVeiculoId);
 
         List<Servico> servicos = servicoRepository.findAllById(servicoIds);
 
@@ -455,6 +455,14 @@ public class LavaJatoService {
                 diasSemanaRepository.findById(id)
                         .orElseThrow(() -> new ResourceNotFoundException(
                                 "Dia da semana não encontrado com o id = " + id))
+        );
+    }
+
+    private @NonNull CategoriaVeiculo buscarCategoriaVeiculoOuLancar(UUID categoriaVeiculoId) {
+        return categoriaVeiculoCache.get(categoriaVeiculoId, id ->
+                categoriaVeiculoRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "Categoria de veículo não encontrada."))
         );
     }
 }
