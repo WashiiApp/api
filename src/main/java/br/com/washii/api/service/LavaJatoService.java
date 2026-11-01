@@ -17,7 +17,9 @@ import br.com.washii.api.repository.DiasSemanaRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.TelefoneRepository;
 import br.com.washii.api.repository.UsuarioTelefoneRepository;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -72,6 +74,9 @@ public class LavaJatoService {
     private final ServicoRepository servicoRepository;
     private final CategoriaVeiculoRepository categoriaVeiculoRepository;
     private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
+
+    // Cache local
+    private final Cache<UUID, DiasSemana> diasSemanaCache;
 
     // Gestão cadastral do sistema
     @Transactional
@@ -211,9 +216,7 @@ public class LavaJatoService {
     }
 
     private Disponibilidade criarDisponibilidade(LavaJato lavaJato, ExpedienteRequest request) {
-        DiasSemana diaSemana = diasSemanaRepository.findById(request.diaSemanaId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Dia da semana não encontrado com o id = " + request.diaSemanaId()));
+        DiasSemana diaSemana = buscarDiasSemanaOuLancar(request.diaSemanaId());
 
         if (!request.isHorarioValido()) {
             throw new ValidationException("O horário de término deve ser posterior ao horário de início.");
@@ -226,10 +229,6 @@ public class LavaJatoService {
         disponibilidade.setHrTermino(request.horarioTermino());
         return disponibilidade;
     }
-
-
-    // Serviços
-
 
     // Operacionais e Consultas
     @Transactional(readOnly = true)
@@ -357,6 +356,8 @@ public class LavaJatoService {
         );
     }
 
+    // ----------- Métodos Auxiliares -------------
+
     private boolean temCapacidade(
             LocalDateTime inicioCandidato,
             LocalDateTime fimCandidato,
@@ -445,5 +446,15 @@ public class LavaJatoService {
         return Normalizer.normalize(texto, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(Locale.ROOT);
+    }
+
+    private @NonNull DiasSemana buscarDiasSemanaOuLancar(UUID diaSemanaId) {
+
+        //Verifica se o valor está no cache, se não, busca no repository e guarda no cache
+        return diasSemanaCache.get(diaSemanaId, id ->
+                diasSemanaRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Dia da semana não encontrado com o id = " + id))
+        );
     }
 }
