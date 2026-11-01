@@ -1,6 +1,7 @@
 package br.com.washii.api.repository;
 
 import br.com.washii.api.model.Agendamento;
+import br.com.washii.api.model.StatusAgendamento;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.UUID;
@@ -21,4 +22,19 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, UUID>,
     List<UUID> findAtivosDoLavaJatoNaData(@Param("lavaJatoId") UUID lavaJatoId,
                                            @Param("data") LocalDate data,
                                            @Param("statusAgendado") String statusAgendado);
+
+    @Query("""
+       select distinct a
+       from Agendamento a
+       join a.agendamentoServicos ags
+       join ags.servico s
+       where s.lavaJato.id = :lavaJatoId
+         and a.data = :data
+         and a.statusAgendamento = :status
+       """)
+    List<Agendamento> buscarAgendamentosAtivosDoLavaJatoNaData(
+            @Param("lavaJatoId") UUID lavaJatoId,
+            @Param("data") LocalDate data,
+            @Param("status") StatusAgendamento status
+    );
 }
