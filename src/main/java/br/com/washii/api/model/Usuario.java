@@ -30,7 +30,7 @@ public class Usuario implements Persistable<UUID> {
     private String email;
 
     @Column(name = "foto_perfil")
-    private byte[] fotoPerfil;
+    private String fotoPerfil;
 
     @Column(nullable = false)
     private boolean ativo;

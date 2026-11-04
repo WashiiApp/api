@@ -7,7 +7,7 @@ import java.util.UUID;
 public record LavaJatoResponse(
         UUID id,
         String email,
-        byte[] fotoPerfil,
+        String fotoPerfil,
         boolean ativo,
         String cidade,
         String estado,

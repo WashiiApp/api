@@ -14,8 +14,10 @@ import br.com.washii.api.service.ServicoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import br.com.washii.api.dto.response.HorariosDisponiveisResponse;
 import java.time.LocalDate;
@@ -46,6 +48,15 @@ public class LavaJatoController {
     {
         lavaJatoService.atualizar(id, request);
 
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping(value = "/{id}/foto-perfil", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Void> atualizarFotoPerfil(
+            @PathVariable UUID id,
+            @RequestParam("arquivo") MultipartFile arquivo
+    ) {
+        lavaJatoService.atualizarFotoPerfil(id, arquivo);
         return ResponseEntity.noContent().build();
     }
 

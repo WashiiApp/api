@@ -1,7 +1,7 @@
 package br.com.washii.api.dto.request;
 
 public record AtualizacaoLavaJatoRequest(
-        byte[] fotoPerfil,
+        String fotoPerfil,
         String razaoSocial,
         String nomeFantasia,
         Integer fluxoSimultaneo,
