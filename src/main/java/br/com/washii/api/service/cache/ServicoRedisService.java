@@ -1,8 +1,10 @@
 package br.com.washii.api.service.cache;
 
 import br.com.washii.api.dto.response.ServicoResponse;
+import br.com.washii.api.model.CategoriaVeiculoServico;
 import br.com.washii.api.model.LavaJato;
 import br.com.washii.api.model.Servico;
+import br.com.washii.api.repository.CategoriaVeiculoServicoRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.ServicoRepository;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +29,7 @@ public class ServicoRedisService {
 
     private final ServicoRepository servicoRepository;
     private final LavaJatoRepository lavaJatoRepository;
+    private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper; // ObjectMapper do Jackson 3
 
@@ -54,7 +57,12 @@ public class ServicoRedisService {
         List<Servico> servicos = servicoRepository.findAllByLavaJato(lavaJato);
 
         List<ServicoResponse> responses = servicos.stream()
-                .map(ServicoResponse::fromEntity)
+                .map(servico -> {
+                    List<CategoriaVeiculoServico> custom = categoriaVeiculoServicoRepository.findAllByServico(servico);
+                    servico.setCustom(custom);
+
+                    return ServicoResponse.fromEntity(servico);
+                })
                 .toList();
 
         // 3. Tenta salvar no Redis como String JSON (TTL de 10 minutos)

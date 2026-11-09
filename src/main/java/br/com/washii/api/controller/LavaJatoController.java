@@ -107,7 +107,7 @@ public class LavaJatoController {
     }
 
     @GetMapping("/{lavaJatoId}/servicos/{servicoId}")
-    public ResponseEntity<ServicoResponse> buscarPorId(
+    public ResponseEntity<ServicoResponse> buscarServicoPorId(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId)
     {
@@ -117,7 +117,7 @@ public class LavaJatoController {
     }
 
     @PutMapping("/{lavaJatoId}/servicos/{servicoId}")
-    public ResponseEntity<Void> buscarPorId(
+    public ResponseEntity<Void> atualizarServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
             @RequestBody CadastroServicoRequest request)
@@ -127,7 +127,7 @@ public class LavaJatoController {
     }
 
     @DeleteMapping("/{lavaJatoId}/servicos/{servicoId}")
-    public ResponseEntity<Void> deletar(
+    public ResponseEntity<Void> deletarServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId
     ){
