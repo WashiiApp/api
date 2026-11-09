@@ -53,7 +53,7 @@ public class AgendamentoController {
             @PathVariable UUID usuarioId,
             @PathVariable UUID agendamentoId
     ){
-        Agendamento agendamento = agendamentoService.buscar(usuarioId, agendamentoId);
+        Agendamento agendamento = agendamentoService.buscarAgendamento(usuarioId, agendamentoId);
 
         return ResponseEntity.ok(AgendamentoCriadoResponse.from(agendamento));
     }
