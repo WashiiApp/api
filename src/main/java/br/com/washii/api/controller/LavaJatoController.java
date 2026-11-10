@@ -135,11 +135,14 @@ public class LavaJatoController {
     //Avaliação de Serviços
 
     @GetMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes")
-    public ResponseEntity<?> buscarAvaliacoes(
+    public ResponseEntity<List<AvaliacaoResponse>> buscarAvaliacoes(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId
     ){
-        return null;
+        List<AvaliacaoResponse> avaliacoesResponse = servicoService
+                .buscarAvaliacoes(lavaJatoId, servicoId);
+
+        return ResponseEntity.ok(avaliacoesResponse);
     }
 
     @PostMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes")
@@ -148,7 +151,8 @@ public class LavaJatoController {
             @PathVariable UUID servicoId,
             @RequestBody AvaliacaoRequest request
     ){
-        return null;
+        servicoService.salvarAvaliacao(lavaJatoId, servicoId, request);
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes/{avaliacaoId}")
@@ -157,7 +161,8 @@ public class LavaJatoController {
             @PathVariable UUID servicoId,
             @PathVariable UUID avaliacaoId
     ){
-        return null;
+        servicoService.apagarAvaliacao(lavaJatoId, servicoId, avaliacaoId);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
