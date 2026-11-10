@@ -91,6 +91,28 @@ class ClienteServiceTest {
         verify(clienteRepository).save(cliente);
     }
 
+    @Test
+    void deveRejeitarUploadDeFotoVaziaNoCliente() {
+        UUID id = UUID.randomUUID();
+        MockMultipartFile arquivoVazio = new MockMultipartFile("arquivo", "vazio.png", "image/png", new byte[0]);
+
+        assertThrows(ValidationException.class,
+                () -> clienteService.atualizarFotoPerfil(id, arquivoVazio));
+
+        verifyNoInteractions(storageProvider);
+    }
+
+    @Test
+    void deveRejeitarUploadDeFormatoInvalidoNoCliente() {
+        UUID id = UUID.randomUUID();
+        MockMultipartFile arquivoPdf = new MockMultipartFile("arquivo", "doc.pdf", "application/pdf", new byte[]{1, 2});
+
+        assertThrows(ValidationException.class,
+                () -> clienteService.atualizarFotoPerfil(id, arquivoPdf));
+
+        verifyNoInteractions(storageProvider);
+    }
+
     private Veiculo criarVeiculo(String placa) {
         CategoriaVeiculo categoria = new CategoriaVeiculo();
         categoria.setNome("MOTO");
