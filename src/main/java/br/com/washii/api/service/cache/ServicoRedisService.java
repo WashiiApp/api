@@ -7,9 +7,7 @@ import br.com.washii.api.model.Servico;
 import br.com.washii.api.repository.CategoriaVeiculoServicoRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.ServicoRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,72 +19,51 @@ import java.util.UUID;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
-public class ServicoRedisService {
-
-    @Value("${spring.cache.redis.time-to-live}")
-    private Duration cacheTtl;
+public class ServicoRedisService extends BaseRedisCacheService {
 
     private final ServicoRepository servicoRepository;
     private final LavaJatoRepository lavaJatoRepository;
     private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
-    private final StringRedisTemplate redisTemplate;
-    private final ObjectMapper objectMapper; // ObjectMapper do Jackson 3
 
     private static final String CACHE_PREFIX = "servicosLavaJato::";
+
+    public ServicoRedisService(
+            StringRedisTemplate redisTemplate,
+            ObjectMapper objectMapper,
+            ServicoRepository servicoRepository,
+            LavaJatoRepository lavaJatoRepository,
+            CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository
+    ) {
+        super(redisTemplate, objectMapper, Duration.ofMinutes(10));
+        this.servicoRepository = servicoRepository;
+        this.lavaJatoRepository = lavaJatoRepository;
+        this.categoriaVeiculoServicoRepository = categoriaVeiculoServicoRepository;
+    }
 
     @Transactional(readOnly = true)
     public List<ServicoResponse> buscarServicosPorLavaJato(UUID lavaJatoId) {
         String cacheKey = CACHE_PREFIX + lavaJatoId;
 
-        // 1. Tenta recuperar do Redis em formato JSON
-        try {
-            String cachedJson = redisTemplate.opsForValue().get(cacheKey);
-            if (cachedJson != null) {
-                return objectMapper.readValue(
-                        cachedJson,
-                        objectMapper.getTypeFactory().constructCollectionType(List.class, ServicoResponse.class)
-                );
-            }
-        } catch (Exception e) {
-            log.warn("Falha ao ler do cache Redis para a chave {}: {}. Prosseguindo para o banco de dados.", cacheKey, e.getMessage());
-        }
+        // Define o tipo da Collection para o Jackson 3 deserializar corretamente a List
+        var collectionType = objectMapper.getTypeFactory().constructCollectionType(List.class, ServicoResponse.class);
 
-        // 2. Se não estiver no cache (ou se o Redis falhou), busca do banco de dados
-        LavaJato lavaJato = buscarLavaJatoOuLancar(lavaJatoId);
-        List<Servico> servicos = servicoRepository.findAllByLavaJato(lavaJato);
+        return buscarOuCarregar(cacheKey, collectionType, () -> {
+            LavaJato lavaJato = lavaJatoRepository.findById(lavaJatoId)
+                    .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
 
-        List<ServicoResponse> responses = servicos.stream()
-                .map(servico -> {
-                    List<CategoriaVeiculoServico> custom = categoriaVeiculoServicoRepository.findAllByServico(servico);
-                    servico.setCustom(custom);
+            List<Servico> servicos = servicoRepository.findAllByLavaJato(lavaJato);
 
-                    return ServicoResponse.fromEntity(servico);
-                })
-                .toList();
-
-        // 3. Tenta salvar no Redis como String JSON (TTL de 10 minutos)
-        try {
-            String jsonToCache = objectMapper.writeValueAsString(responses);
-            redisTemplate.opsForValue().set(cacheKey, jsonToCache, cacheTtl);
-        } catch (Exception e) {
-            log.warn("Falha ao gravar no cache Redis para a chave {}: {}.", cacheKey, e.getMessage());
-        }
-
-        return responses;
+            return servicos.stream()
+                    .map(servico -> {
+                        List<CategoriaVeiculoServico> custom = categoriaVeiculoServicoRepository.findAllByServico(servico);
+                        servico.setCustom(custom);
+                        return ServicoResponse.fromEntity(servico);
+                    })
+                    .toList();
+        });
     }
 
     public void invalidarCache(UUID lavaJatoId) {
-        String cacheKey = CACHE_PREFIX + lavaJatoId;
-        try {
-            redisTemplate.delete(cacheKey);
-        } catch (Exception e) {
-            log.warn("Falha ao invalidar o cache Redis para a chave {}: {}.", cacheKey, e.getMessage());
-        }
-    }
-
-    private LavaJato buscarLavaJatoOuLancar(UUID lavaJatoId) {
-        return lavaJatoRepository.findById(lavaJatoId)
-                .orElseThrow(() -> new IllegalArgumentException("Lava Jato não encontrado com o id = " + lavaJatoId));
+        invalidarChave(CACHE_PREFIX + lavaJatoId);
     }
 }
