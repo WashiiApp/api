@@ -1,9 +1,6 @@
 package br.com.washii.api.controller;
 
-import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
-import br.com.washii.api.dto.request.CadastroServicoRequest;
-import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
-import br.com.washii.api.dto.request.ExpedienteRequest;
+import br.com.washii.api.dto.request.*;
 import br.com.washii.api.dto.response.*;
 import br.com.washii.api.model.CategoriaVeiculoServico;
 import br.com.washii.api.model.Servico;
@@ -133,6 +130,34 @@ public class LavaJatoController {
     ){
         servicoService.deletarServico(lavaJatoId, servicoId);
         return ResponseEntity.noContent().build();
+    }
+
+    //Avaliação de Serviços
+
+    @GetMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes")
+    public ResponseEntity<?> buscarAvaliacoes(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId
+    ){
+        return null;
+    }
+
+    @PostMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes")
+    public ResponseEntity<Void> salvarAvaliacao(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId,
+            @RequestBody AvaliacaoRequest request
+    ){
+        return null;
+    }
+
+    @DeleteMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes/{avaliacaoId}")
+    public ResponseEntity<Void> apagarAvaliacao(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId,
+            @PathVariable UUID avaliacaoId
+    ){
+        return null;
     }
 
     @GetMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
