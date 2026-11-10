@@ -37,4 +37,18 @@ public interface AgendamentoRepository extends JpaRepository<Agendamento, UUID>,
             @Param("data") LocalDate data,
             @Param("status") StatusAgendamento status
     );
+
+    @Query("""
+        select case when count(a) > 0 then true else false end
+        from Agendamento a
+        join a.agendamentoServicos ags
+        join a.veiculo v
+        where ags.servico.id = :servicoId
+            and v.cliente.id = :clienteId
+            and a.statusAgendamento = StatusAgendamento.CONCLUIDO
+    """)
+    Boolean existsAgendamentoConcluidoByServicoIdAndClienteId(
+            @Param("servicoId") UUID servicoId,
+            @Param("clienteId") UUID clienteId
+    );
 }

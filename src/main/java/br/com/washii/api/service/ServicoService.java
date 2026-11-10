@@ -1,7 +1,10 @@
 package br.com.washii.api.service;
 
+import br.com.washii.api.dto.request.AvaliacaoRequest;
 import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
+import br.com.washii.api.dto.response.AvaliacaoResponse;
+import br.com.washii.api.dto.response.ClienteResponse;
 import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
@@ -12,7 +15,9 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -24,6 +29,9 @@ public class ServicoService {
     private final CategoriaVeiculoRepository catVeiculoRepository;
     private final CategoriaVeiculoServicoRepository catVeiculoServicoRepository;
     private final LavaJatoRepository lavaJatoRepository;
+    private final AvaliacaoRepository avaliacaoRepository;
+    private final ClienteRepository clienteRepository;
+    private final AgendamentoRepository agendamentoRepository;
 
     // Serviço de cache Redis manual
     private final ServicoRedisService servicoCache;
@@ -146,6 +154,47 @@ public class ServicoService {
         servicoCache.invalidarCache(lavaJatoId);
     }
 
+    @Transactional
+    public List<AvaliacaoResponse> buscarAvaliacoes(UUID lavaJatoId, UUID servicoId) {
+        Servico servico = validarEObterServico(lavaJatoId, servicoId);
+
+        List<Avaliacao> avaliacaos = avaliacaoRepository.findAllByServico(servico);
+
+        return avaliacaos.stream()
+                .map(AvaliacaoResponse::fromEntity)
+                .toList();
+    }
+
+    public void salvarAvaliacao(UUID lavaJatoId, UUID servicoId, AvaliacaoRequest request) {
+        Servico servico = validarEObterServico(lavaJatoId, servicoId);
+        Cliente cliente = buscarClienteOuLancar(request.clienteId());
+
+        Boolean jaUsouServico = agendamentoRepository
+                .existsAgendamentoConcluidoByServicoIdAndClienteId(servico.getId(), cliente.getId());
+        System.out.println(jaUsouServico);
+
+        if (!jaUsouServico) {
+            throw new IllegalArgumentException(
+                    "Não é possível um cliente avaliar um serviço o qual ainda não tenha usado");
+        }
+
+        Avaliacao avaliacao = new Avaliacao();
+        avaliacao.setServico(servico);
+        avaliacao.setCliente(cliente);
+        avaliacao.setData(LocalDate.now());
+        avaliacao.setNivelSatisfacao(request.nivelSatisfacao());
+        avaliacao.setComentario(request.comentario());
+
+        avaliacaoRepository.save(avaliacao);
+    }
+
+    public void apagarAvaliacao(UUID lavaJatoId, UUID servicoId, UUID avaliacaoId) {
+        validarEObterServico(lavaJatoId, servicoId);
+        Avaliacao avaliacao = validarEObterAvalicao(servicoId, avaliacaoId);
+
+        avaliacaoRepository.delete(avaliacao);
+    }
+
     // --- MÉTODOS AUXILIARES PRIVADOS ---
 
     private LavaJato buscarLavaJatoOuLancar(UUID lavaJatoId) {
@@ -178,5 +227,21 @@ public class ServicoService {
         }
 
         return servico;
+    }
+
+    private Cliente buscarClienteOuLancar(UUID id) {
+        return clienteRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado com id = " + id));
+    }
+
+    private Avaliacao validarEObterAvalicao(UUID servicoId, UUID avaliacaoId) {
+        Avaliacao avaliacao = avaliacaoRepository.findById(avaliacaoId)
+                .orElseThrow(() -> new IllegalArgumentException("Não foi encontrado uma avaliacão com o id = " + avaliacaoId));
+
+        if (!avaliacao.getServico().getId().equals(servicoId)){
+            throw new IllegalArgumentException("A avaliação de id = " + avaliacaoId + " não pertence ao servico de id = " + servicoId);
+        }
+
+        return avaliacao;
     }
 }
