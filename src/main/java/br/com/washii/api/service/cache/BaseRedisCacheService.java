@@ -23,6 +23,12 @@ public abstract class BaseRedisCacheService {
         this.objectMapper = objectMapper;
     }
 
+    protected BaseRedisCacheService(StringRedisTemplate redisTemplate, ObjectMapper objectMapper, Duration ttl) {
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
+        this.cacheTtl = ttl;
+    }
+
     /**
      * Tenta buscar do cache Redis. Se não encontrar, executa o loader (banco ou cálculo),
      * armazena o resultado no Redis e o devolve.

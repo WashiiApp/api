@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
@@ -29,7 +30,7 @@ public class ExpedienteRedisService extends BaseRedisCacheService {
             DisponibilidadeRepository disponibilidadeRepository,
             LavaJatoRepository lavaJatoRepository
     ) {
-        super(redisTemplate, objectMapper);
+        super(redisTemplate, objectMapper, Duration.ofMinutes(30));
         this.disponibilidadeRepository = disponibilidadeRepository;
         this.lavaJatoRepository = lavaJatoRepository;
     }

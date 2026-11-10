@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
+import java.time.Duration;
 import java.util.UUID;
 
 @Slf4j
@@ -25,7 +26,7 @@ public class LavaJatoRedisService extends BaseRedisCacheService {
             ObjectMapper objectMapper,
             LavaJatoRepository lavaJatoRepository
     ) {
-        super(redisTemplate, objectMapper);
+        super(redisTemplate, objectMapper, Duration.ofMinutes(30));
         this.lavaJatoRepository = lavaJatoRepository;
     }
 
