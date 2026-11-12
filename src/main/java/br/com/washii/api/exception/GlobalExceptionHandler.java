@@ -19,6 +19,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.dao.OptimisticLockingFailureException;
+
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.stream.Collectors;
@@ -275,6 +278,21 @@ public class GlobalExceptionHandler {
                 status.getReasonPhrase(),
                 message,
                 request.getRequestURI()
+        );
+    }
+    //O status 409 Conflict informa ao cliente que a operação colidiu com uma alteração concorrente
+    @ExceptionHandler({
+            OptimisticLockingFailureException.class,
+            OptimisticLockException.class
+    })
+    public StandardError handleOptimisticLock(
+            Exception exception,
+            HttpServletRequest request
+    ) {
+        return error(
+                HttpStatus.CONFLICT,
+                "Este agendamento foi alterado por outra operação. Atualize os dados e tente novamente.",
+                request
         );
     }
 }
