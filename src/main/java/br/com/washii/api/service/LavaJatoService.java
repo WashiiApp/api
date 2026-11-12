@@ -18,7 +18,12 @@ import br.com.washii.api.repository.DiasSemanaRepository;
 import br.com.washii.api.repository.LavaJatoRepository;
 import br.com.washii.api.repository.TelefoneRepository;
 import br.com.washii.api.repository.UsuarioTelefoneRepository;
+import br.com.washii.api.service.cache.ExpedienteRedisService;
+import br.com.washii.api.service.cache.HorarioDisponivelRedisService;
+import br.com.washii.api.service.cache.LavaJatoRedisService;
+import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.NonNull;
 import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -78,19 +83,24 @@ public class LavaJatoService {
     private final CategoriaVeiculoRepository categoriaVeiculoRepository;
     private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
 
-    // Gestão cadastral do sistema
-    @Transactional
-    public LavaJatoResponse buscarPorId(UUID id){
-        LavaJato lavaJato = lavaJatoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
+    // Serviço de cache Redis manual para expedientes
+    private final LavaJatoRedisService lavaJatoCache;
+    private final ExpedienteRedisService expedienteCache;
+    private final HorarioDisponivelRedisService horarioDisponivelCache;
 
-       return LavaJatoResponse.fromEntity(lavaJato);
+    // Cache local (Caffeine)
+    private final Cache<UUID, DiasSemana> diasSemanaCache;
+    private final Cache<UUID, CategoriaVeiculo> categoriaVeiculoCache;
+
+    // Gestão cadastral do sistema
+    @Transactional(readOnly = true)
+    public LavaJatoResponse buscarPorId(UUID id){
+        return lavaJatoCache.buscarPorId(id);
     }
 
     @Transactional
     public void atualizar(UUID id, AtualizacaoLavaJatoRequest request) {
-        LavaJato lavaJato = lavaJatoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
+        LavaJato lavaJato = buscarLavaJato(id);
 
         if (request.fotoPerfil() != null) {
             lavaJato.setFotoPerfil(request.fotoPerfil());
@@ -120,11 +130,13 @@ public class LavaJatoService {
                     new Coordinate(request.longitude(), request.latitude())
             );
 
-            // Atribui a nova instância diretamente à entidade
             lavaJato.setCoordenadas(point);
         }
 
         lavaJatoRepository.save(lavaJato);
+
+        // Invalida cache
+        lavaJatoCache.invalidarCache(id);
     }
 
     @Transactional
@@ -152,6 +164,7 @@ public class LavaJatoService {
             String urlPublica = storageProvider.upload(caminhoArquivo, arquivo.getBytes(), contentType);
             lavaJato.setFotoPerfil(urlPublica);
             lavaJatoRepository.save(lavaJato);
+            lavaJatoCache.invalidarCache(id);
             return urlPublica;
         } catch (IOException e) {
             throw new BusinessException("Erro ao ler o conteúdo da imagem enviada.");
@@ -184,16 +197,17 @@ public class LavaJatoService {
             usuario.getTelefones().clear();
             usuario.getTelefones().add(usuarioTelefone);
         }
+
+        lavaJatoCache.invalidarCache(usuario.getId());
     }
 
     @Transactional
     public void deletar(UUID id) {
-        LavaJato lavaJato = lavaJatoRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Lava jato não encontrado com o id = " + id));
-
+        LavaJato lavaJato = buscarLavaJato(id);
         lavaJato.setAtivo(false);
-
         lavaJatoRepository.save(lavaJato);
+
+        lavaJatoCache.invalidarCache(id);
     }
 
     // Expediente
@@ -204,18 +218,17 @@ public class LavaJatoService {
                 .map(item -> criarDisponibilidade(lavaJato, item))
                 .toList();
 
-        return disponibilidadeRepository.saveAll(disponibilidades).stream()
+        List<ExpedienteResponse> response = disponibilidadeRepository.saveAll(disponibilidades).stream()
                 .map(ExpedienteResponse::fromEntity)
                 .toList();
-    }
 
+        expedienteCache.invalidarCache(lavaJatoId);
+        return response;
+    }
 
     @Transactional(readOnly = true)
     public List<ExpedienteResponse> buscarExpediente(UUID lavaJatoId) {
-        buscarLavaJato(lavaJatoId);
-        return disponibilidadeRepository.findAllByLavaJato_IdOrderByDiasSemana_Id(lavaJatoId).stream()
-                .map(ExpedienteResponse::fromEntity)
-                .toList();
+        return expedienteCache.buscarExpediente(lavaJatoId);
     }
 
     @Transactional
@@ -226,9 +239,12 @@ public class LavaJatoService {
                 .toList();
 
         disponibilidadeRepository.deleteAllByLavaJato_Id(lavaJatoId);
-        return disponibilidadeRepository.saveAll(disponibilidades).stream()
+        List<ExpedienteResponse> response = disponibilidadeRepository.saveAll(disponibilidades).stream()
                 .map(ExpedienteResponse::fromEntity)
                 .toList();
+
+        expedienteCache.invalidarCache(lavaJatoId);
+        return response;
     }
 
     @Transactional
@@ -237,33 +253,8 @@ public class LavaJatoService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Expediente não encontrado para o estabelecimento informado."));
         disponibilidadeRepository.delete(disponibilidade);
+        expedienteCache.invalidarCache(lavaJatoId);
     }
-
-    private LavaJato buscarLavaJato(UUID id) {
-        return lavaJatoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Lava-jato não encontrado com o id = " + id));
-    }
-
-    private Disponibilidade criarDisponibilidade(LavaJato lavaJato, ExpedienteRequest request) {
-        DiasSemana diaSemana = diasSemanaRepository.findById(request.diaSemanaId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Dia da semana não encontrado com o id = " + request.diaSemanaId()));
-
-        if (!request.isHorarioValido()) {
-            throw new ValidationException("O horário de término deve ser posterior ao horário de início.");
-        }
-
-        Disponibilidade disponibilidade = new Disponibilidade();
-        disponibilidade.setLavaJato(lavaJato);
-        disponibilidade.setDiasSemana(diaSemana);
-        disponibilidade.setHrInicio(request.horarioInicio());
-        disponibilidade.setHrTermino(request.horarioTermino());
-        return disponibilidade;
-    }
-
-
-    // Serviços
-
 
     // Operacionais e Consultas
     @Transactional(readOnly = true)
@@ -273,11 +264,30 @@ public class LavaJatoService {
             List<UUID> servicoIds,
             UUID categoriaVeiculoId
     ) {
-        LavaJato lavaJato = buscarLavaJato(lavaJatoId);
+        if (data == null) data = LocalDate.now();
+        final LocalDate dataConsulta = data;
 
-        if (data == null || data.isBefore(LocalDate.now(ZONA_HORARIA))) {
+        if (dataConsulta.isBefore(LocalDate.now(ZONA_HORARIA))) {
             throw new ValidationException("A data consultada não pode estar no passado.");
         }
+
+        // Verifica primeiro no cache ou calcula
+        return horarioDisponivelCache.buscarOuCalcular(
+                lavaJatoId,
+                dataConsulta,
+                () -> calcularHorariosDisponiveis(lavaJatoId, dataConsulta, servicoIds, categoriaVeiculoId)
+        );
+    }
+
+    // ----------- Métodos Auxiliares -------------
+
+    private HorariosDisponiveisResponse calcularHorariosDisponiveis(
+            UUID lavaJatoId,
+            LocalDate dataConsulta,
+            List<UUID> servicoIds,
+            UUID categoriaVeiculoId
+    ) {
+        LavaJato lavaJato = buscarLavaJato(lavaJatoId);
 
         if (servicoIds == null || servicoIds.isEmpty()) {
             throw new ValidationException("Informe pelo menos um serviço.");
@@ -287,10 +297,7 @@ public class LavaJatoService {
             throw new ValidationException("Não informe serviços duplicados.");
         }
 
-        CategoriaVeiculo categoria = categoriaVeiculoRepository.findById(categoriaVeiculoId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Categoria de veículo não encontrada."
-                ));
+        CategoriaVeiculo categoria = buscarCategoriaVeiculoOuLancar(categoriaVeiculoId);
 
         List<Servico> servicos = servicoRepository.findAllById(servicoIds);
 
@@ -330,7 +337,7 @@ public class LavaJatoService {
             throw new ValidationException("A duração total calculada é inválida.");
         }
 
-        String diaCurto = nomeCurto(data.getDayOfWeek());
+        String diaCurto = nomeCurto(dataConsulta.getDayOfWeek());
 
         List<Disponibilidade> expedientesDoDia =
                 disponibilidadeRepository
@@ -344,7 +351,7 @@ public class LavaJatoService {
         List<Agendamento> agendamentos =
                 agendamentoRepository.buscarAgendamentosAtivosDoLavaJatoNaData(
                         lavaJatoId,
-                        data,
+                        dataConsulta,
                         StatusAgendamento.AGENDADO
                 );
 
@@ -359,7 +366,7 @@ public class LavaJatoService {
                  !inicio.isAfter(ultimoInicio);
                  inicio = inicio.plusMinutes(INTERVALO_SUGESTOES_MINUTOS)) {
 
-                LocalDateTime inicioAtendimento = data.atTime(inicio);
+                LocalDateTime inicioAtendimento = dataConsulta.atTime(inicio);
                 LocalDateTime fimAtendimento =
                         inicioAtendimento.plusMinutes(duracaoTotalMinutos);
 
@@ -385,7 +392,7 @@ public class LavaJatoService {
 
         return new HorariosDisponiveisResponse(
                 lavaJatoId,
-                data,
+                dataConsulta,
                 duracaoTotalMinutos,
                 horariosOrdenados
         );
@@ -479,5 +486,41 @@ public class LavaJatoService {
         return Normalizer.normalize(texto, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")
                 .toLowerCase(Locale.ROOT);
+    }
+
+    private @NonNull DiasSemana buscarDiasSemanaOuLancar(UUID diaSemanaId) {
+        return diasSemanaCache.get(diaSemanaId, id ->
+                diasSemanaRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Dia da semana não encontrado com o id = " + id))
+        );
+    }
+
+    private @NonNull CategoriaVeiculo buscarCategoriaVeiculoOuLancar(UUID categoriaVeiculoId) {
+        return categoriaVeiculoCache.get(categoriaVeiculoId, id ->
+                categoriaVeiculoRepository.findById(id)
+                        .orElseThrow(() -> new ResourceNotFoundException(
+                                "Categoria de veículo não encontrada."))
+        );
+    }
+
+    private LavaJato buscarLavaJato(UUID id) {
+        return lavaJatoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Lava-jato não encontrado com o id = " + id));
+    }
+
+    private Disponibilidade criarDisponibilidade(LavaJato lavaJato, ExpedienteRequest request) {
+        DiasSemana diaSemana = buscarDiasSemanaOuLancar(request.diaSemanaId());
+
+        if (!request.isHorarioValido()) {
+            throw new ValidationException("O horário de término deve ser posterior ao horário de início.");
+        }
+
+        Disponibilidade disponibilidade = new Disponibilidade();
+        disponibilidade.setLavaJato(lavaJato);
+        disponibilidade.setDiasSemana(diaSemana);
+        disponibilidade.setHrInicio(request.horarioInicio());
+        disponibilidade.setHrTermino(request.horarioTermino());
+        return disponibilidade;
     }
 }

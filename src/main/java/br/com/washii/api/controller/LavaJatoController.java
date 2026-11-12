@@ -1,13 +1,8 @@
 package br.com.washii.api.controller;
 
-import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
-import br.com.washii.api.dto.request.CadastroServicoRequest;
-import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
-import br.com.washii.api.dto.request.ExpedienteRequest;
-import br.com.washii.api.dto.response.CategoriaVeiculoServicoResponse;
-import br.com.washii.api.dto.response.ExpedienteResponse;
-import br.com.washii.api.dto.response.LavaJatoResponse;
-import br.com.washii.api.dto.response.ServicoResponse;
+import br.com.washii.api.dto.request.*;
+import br.com.washii.api.dto.response.*;
+import br.com.washii.api.model.CategoriaVeiculoServico;
 import br.com.washii.api.model.Servico;
 import br.com.washii.api.service.LavaJatoService;
 import br.com.washii.api.service.ServicoService;
@@ -68,7 +63,7 @@ public class LavaJatoController {
     }
 
     // Expediente
-    @PostMapping("/{id}/expediente")
+    @PostMapping("/{id}/expedientes")
     public ResponseEntity<List<ExpedienteResponse>> cadastrarExpediente(
             @PathVariable UUID id,
             @Valid @RequestBody List<@Valid ExpedienteRequest> expediente)
@@ -77,13 +72,13 @@ public class LavaJatoController {
                 .body(lavaJatoService.cadastrarExpediente(id, expediente));
     }
 
-    @GetMapping("/{id}/expediente")
+    @GetMapping("/{id}/expedientes")
     public ResponseEntity<List<ExpedienteResponse>> buscarExpediente(@PathVariable UUID id)
     {
         return ResponseEntity.ok(lavaJatoService.buscarExpediente(id));
     }
 
-    @PutMapping("/{id}/expediente")
+    @PutMapping("/{id}/expedientes")
     public ResponseEntity<List<ExpedienteResponse>> atualizarExpediente(
             @PathVariable UUID id,
             @Valid @RequestBody List<@Valid ExpedienteRequest> expediente)
@@ -91,7 +86,7 @@ public class LavaJatoController {
         return ResponseEntity.ok(lavaJatoService.atualizarExpediente(id, expediente));
     }
 
-    @DeleteMapping("/{id}/expediente/{expedienteId}")
+    @DeleteMapping("/{id}/expedientes/{expedienteId}")
     public ResponseEntity<Void> removerExpediente(
             @PathVariable UUID id,
             @PathVariable UUID expedienteId)
@@ -114,17 +109,13 @@ public class LavaJatoController {
 
     @GetMapping("/{lavaJatoId}/servicos")
     public ResponseEntity<List<ServicoResponse>> buscarServicos(@PathVariable UUID lavaJatoId){
-        List<Servico> servicos = servicoService.buscarServicosPorLavaJato(lavaJatoId);
+        List<ServicoResponse> response = servicoService.buscarServicosPorLavaJato(lavaJatoId);
 
-        List<ServicoResponse> servicosDTO = servicos.stream()
-                .map(ServicoResponse::fromEntity)
-                .toList();
-
-        return ResponseEntity.ok(servicosDTO);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{lavaJatoId}/servicos/{servicoId}")
-    public ResponseEntity<ServicoResponse> buscarPorId(
+    public ResponseEntity<ServicoResponse> buscarServicoPorId(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId)
     {
@@ -134,7 +125,7 @@ public class LavaJatoController {
     }
 
     @PutMapping("/{lavaJatoId}/servicos/{servicoId}")
-    public ResponseEntity<Void> buscarPorId(
+    public ResponseEntity<Void> atualizarServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
             @RequestBody CadastroServicoRequest request)
@@ -144,7 +135,7 @@ public class LavaJatoController {
     }
 
     @DeleteMapping("/{lavaJatoId}/servicos/{servicoId}")
-    public ResponseEntity<Void> deletar(
+    public ResponseEntity<Void> deletarServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId
     ){
@@ -152,8 +143,55 @@ public class LavaJatoController {
         return ResponseEntity.noContent().build();
     }
 
+    //Avaliação de Serviços
+
+    @GetMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes")
+    public ResponseEntity<List<AvaliacaoResponse>> buscarAvaliacoes(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId
+    ){
+        List<AvaliacaoResponse> avaliacoesResponse = servicoService
+                .buscarAvaliacoes(lavaJatoId, servicoId);
+
+        return ResponseEntity.ok(avaliacoesResponse);
+    }
+
+    @PostMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes")
+    public ResponseEntity<Void> salvarAvaliacao(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId,
+            @RequestBody AvaliacaoRequest request
+    ){
+        servicoService.salvarAvaliacao(lavaJatoId, servicoId, request);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("{lavaJatoId}/servicos/{servicoId}/avaliacoes/{avaliacaoId}")
+    public ResponseEntity<Void> apagarAvaliacao(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId,
+            @PathVariable UUID avaliacaoId
+    ){
+        servicoService.apagarAvaliacao(lavaJatoId, servicoId, avaliacaoId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
+    public ResponseEntity<List<CategoriaVeiculoServicoResponse>> buscarCustomizacoes(
+        @PathVariable UUID lavaJatoId,
+        @PathVariable UUID servicoId
+    ){
+        List<CategoriaVeiculoServico> categoriaVeiculoServicos = servicoService.buscarCustomizacoesDeServicos(lavaJatoId, servicoId);
+
+        List<CategoriaVeiculoServicoResponse> response = categoriaVeiculoServicos.stream()
+                .map(CategoriaVeiculoServicoResponse::fromEntity)
+                .toList();
+
+        return ResponseEntity.ok(response);
+    }
+
     @PostMapping("/{lavaJatoId}/servicos/{servicoId}/precos")
-    public ResponseEntity<Void> customizarServico(
+    public ResponseEntity<Void> atualizarCustomizacaoDeServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
             @RequestBody List<CategoriaVeiculoServicoRequest> request
@@ -163,7 +201,7 @@ public class LavaJatoController {
     }
 
     @PutMapping("/{lavaJatoId}/servicos/{servicoId}/precos/{precoId}")
-    public ResponseEntity<Void> customizarServico(
+    public ResponseEntity<Void> atualizarCustomizacaoDeServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
             @PathVariable UUID precoId,
@@ -187,7 +225,7 @@ public class LavaJatoController {
     @GetMapping("/{id}/horarios-disponiveis")
     public ResponseEntity<HorariosDisponiveisResponse> buscarHorariosDisponiveis(
             @PathVariable UUID id,
-            @RequestParam LocalDate data,
+            @RequestParam(required = false) LocalDate data,
             @RequestParam List<UUID> servicoIds,
             @RequestParam UUID categoriaVeiculoId
     ) {

@@ -1,6 +1,9 @@
 package br.com.washii.api.dto.response;
 
 import br.com.washii.api.model.Servico;
+
+import java.io.Serializable;
+import java.util.List;
 import java.util.UUID;
 
 public record ServicoResponse(
@@ -8,8 +11,9 @@ public record ServicoResponse(
         String nome,
         String descricao,
         boolean ativo,
-        CategoriaResumoDTO categoriaServico
-) {
+        CategoriaResumoDTO categoriaServico,
+        List<CategoriaVeiculoServicoResponse> custom
+) implements Serializable {
 
     public static ServicoResponse fromEntity(Servico servico) {
         if (servico == null) {
@@ -24,17 +28,25 @@ public record ServicoResponse(
             );
         }
 
+        List<CategoriaVeiculoServicoResponse> listCustom = null;
+        if (servico.getCustom() != null) {
+            listCustom = servico.getCustom().stream()
+                    .map(CategoriaVeiculoServicoResponse::fromEntity)
+                    .toList();
+        }
+
         return new ServicoResponse(
                 servico.getId(),
                 servico.getNome(),
                 servico.getDescricao(),
                 servico.isAtivo(),
-                categoriaDto
+                categoriaDto,
+                listCustom
         );
     }
 
     public record CategoriaResumoDTO(
             UUID id,
             String nome
-    ) {}
+    ) implements Serializable{}
 }
