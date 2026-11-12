@@ -4,6 +4,7 @@ import br.com.washii.api.dto.request.AtualizacaoLavaJatoRequest;
 import br.com.washii.api.dto.response.LavaJatoResponse;
 import br.com.washii.api.dto.request.ExpedienteRequest;
 import br.com.washii.api.dto.response.ExpedienteResponse;
+import br.com.washii.api.exception.BusinessException;
 import br.com.washii.api.exception.ResourceNotFoundException;
 import br.com.washii.api.exception.ValidationException;
 import br.com.washii.api.model.Disponibilidade;
@@ -29,6 +30,7 @@ import org.locationtech.jts.geom.Point;
 import org.locationtech.jts.geom.PrecisionModel;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import br.com.washii.api.dto.response.HorariosDisponiveisResponse;
 import br.com.washii.api.model.Agendamento;
@@ -41,6 +43,7 @@ import br.com.washii.api.repository.CategoriaVeiculoRepository;
 import br.com.washii.api.repository.CategoriaVeiculoServicoRepository;
 import br.com.washii.api.repository.ServicoRepository;
 
+import java.io.IOException;
 import java.text.Normalizer;
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -59,11 +62,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class LavaJatoService {
 
+    private static final List<String> TIPOS_IMAGEM_PERMITIDOS = List.of(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+    );
+
     private final LavaJatoRepository lavaJatoRepository;
     private final DisponibilidadeRepository disponibilidadeRepository;
     private final DiasSemanaRepository diasSemanaRepository;
     private final TelefoneRepository telefoneRepository;
     private final UsuarioTelefoneRepository usuarioTelefoneRepository;
+    private final StorageProvider storageProvider;
 
     private static final int INTERVALO_SUGESTOES_MINUTOS = 30;
     private static final ZoneId ZONA_HORARIA = ZoneId.of("America/Sao_Paulo");
@@ -92,7 +102,9 @@ public class LavaJatoService {
     public void atualizar(UUID id, AtualizacaoLavaJatoRequest request) {
         LavaJato lavaJato = buscarLavaJato(id);
 
-        lavaJato.setFotoPerfil(request.fotoPerfil());
+        if (request.fotoPerfil() != null) {
+            lavaJato.setFotoPerfil(request.fotoPerfil());
+        }
         lavaJato.setRazaoSocial(request.razaoSocial());
         lavaJato.setNomeFantasia(request.nomeFantasia());
         lavaJato.setFluxoSimultaneo(request.fluxoSimultaneo());
@@ -125,6 +137,38 @@ public class LavaJatoService {
 
         // Invalida cache
         lavaJatoCache.invalidarCache(id);
+    }
+
+    @Transactional
+    public String atualizarFotoPerfil(UUID id, MultipartFile arquivo) {
+        if (arquivo == null || arquivo.isEmpty()) {
+            throw new ValidationException("Selecione uma imagem válida.");
+        }
+
+        String contentType = arquivo.getContentType();
+        if (contentType == null || !TIPOS_IMAGEM_PERMITIDOS.contains(contentType)) {
+            throw new ValidationException("Formato de imagem inválido. Envie JPEG, PNG ou WEBP.");
+        }
+
+        LavaJato lavaJato = buscarLavaJato(id);
+
+        String extensao = switch (contentType) {
+            case "image/png" -> ".png";
+            case "image/webp" -> ".webp";
+            default -> ".jpg";
+        };
+
+        String caminhoArquivo = "lavajatos/" + id + "/perfil" + extensao;
+
+        try {
+            String urlPublica = storageProvider.upload(caminhoArquivo, arquivo.getBytes(), contentType);
+            lavaJato.setFotoPerfil(urlPublica);
+            lavaJatoRepository.save(lavaJato);
+            lavaJatoCache.invalidarCache(id);
+            return urlPublica;
+        } catch (IOException e) {
+            throw new BusinessException("Erro ao ler o conteúdo da imagem enviada.");
+        }
     }
 
     private void atualizarTelefone(Usuario usuario, String telefoneRaw) {

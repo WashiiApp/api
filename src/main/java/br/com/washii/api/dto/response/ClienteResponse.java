@@ -9,6 +9,7 @@ import java.util.UUID;
 public record ClienteResponse(
         UUID id,
         String email,
+        String fotoPerfil,
         boolean ativo,
         TipoUsuario tipoUsuario,
         String cidade,
@@ -24,6 +25,7 @@ public record ClienteResponse(
         return new ClienteResponse(
                 cliente.getId(),
                 cliente.getEmail(),
+                cliente.getFotoPerfil(),
                 cliente.isAtivo(),
                 cliente.getTipoUsuario(),
                 cliente.getCidade(),

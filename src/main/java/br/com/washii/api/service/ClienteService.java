@@ -3,6 +3,7 @@ package br.com.washii.api.service;
 import br.com.washii.api.dto.VeiculoDTO;
 import br.com.washii.api.dto.request.AtualizarClienteRequest;
 import br.com.washii.api.dto.response.ClienteResponse;
+import br.com.washii.api.exception.BusinessException;
 import br.com.washii.api.exception.ResourceNotFoundException;
 import br.com.washii.api.exception.ValidationException;
 import br.com.washii.api.model.CategoriaVeiculo;
@@ -19,7 +20,9 @@ import br.com.washii.api.repository.VeiculoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,11 +30,18 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ClienteService {
 
+    private static final List<String> TIPOS_IMAGEM_PERMITIDOS = List.of(
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+    );
+
     private final ClienteRepository clienteRepository;
     private final VeiculoRepository veiculoRepository;
     private final CategoriaVeiculoRepository catVeiculoRepository;
     private final TelefoneRepository telefoneRepository;
     private final UsuarioTelefoneRepository usuarioTelefoneRepository;
+    private final StorageProvider storageProvider;
 
     @Transactional(readOnly = true)
     public ClienteResponse buscarPorId(UUID id) {
@@ -57,6 +67,38 @@ public class ClienteService {
         clienteRepository.save(cliente);
 
         return ClienteResponse.from(cliente);
+    }
+
+    @Transactional
+    public String atualizarFotoPerfil(UUID id, MultipartFile arquivo) {
+        if (arquivo == null || arquivo.isEmpty()) {
+            throw new ValidationException("Selecione uma imagem válida.");
+        }
+
+        String contentType = arquivo.getContentType();
+        if (contentType == null || !TIPOS_IMAGEM_PERMITIDOS.contains(contentType)) {
+            throw new ValidationException("Formato de imagem inválido. Envie JPEG, PNG ou WEBP.");
+        }
+
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + id));
+
+        String extensao = switch (contentType) {
+            case "image/png" -> ".png";
+            case "image/webp" -> ".webp";
+            default -> ".jpg";
+        };
+
+        String caminhoArquivo = "clientes/" + id + "/perfil" + extensao;
+
+        try {
+            String urlPublica = storageProvider.upload(caminhoArquivo, arquivo.getBytes(), contentType);
+            cliente.setFotoPerfil(urlPublica);
+            clienteRepository.save(cliente);
+            return urlPublica;
+        } catch (IOException e) {
+            throw new BusinessException("Erro ao ler o conteúdo da imagem enviada.");
+        }
     }
 
     private void atualizarTelefone(Usuario usuario, String telefoneRaw) {
