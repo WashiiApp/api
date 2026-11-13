@@ -2,6 +2,8 @@ package br.com.washii.api.service;
 
 import br.com.washii.api.dto.request.AgendamentoRequest;
 import br.com.washii.api.dto.response.HorariosDisponiveisResponse;
+import br.com.washii.api.events.AgendamentoCriadoEvent;
+import br.com.washii.api.events.AgendamentoStatusAlteradoEvent;
 import br.com.washii.api.exception.BusinessException;
 import br.com.washii.api.exception.ResourceNotFoundException;
 import br.com.washii.api.exception.ValidationException;
@@ -11,6 +13,7 @@ import br.com.washii.api.repository.specs.AgendamentoSpecs;
 import br.com.washii.api.service.cache.ExpedienteRedisService;
 import br.com.washii.api.service.cache.HorarioDisponivelRedisService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +39,8 @@ public class AgendamentoService {
     private final ServicoRepository servicoRepository;
     private final CategoriaVeiculoServicoRepository categoriaVeiculoServicoRepository;
     private final LavaJatoService lavaJatoService;
+
+    private final ApplicationEventPublisher eventPublisher;
     // cache
     private final ExpedienteRedisService expedienteRedisService;
     private final HorarioDisponivelRedisService horarioDisponivelCache;
@@ -43,7 +48,7 @@ public class AgendamentoService {
     @Transactional
     public Agendamento criar(UUID clienteId, AgendamentoRequest request) {
 
-        clienteRepository.findById(clienteId)
+        Cliente cliente = clienteRepository.findById(clienteId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado."));
 
         LavaJato lavaJato = lavaJatoRepository.findById(request.lavaJatoId())
@@ -52,9 +57,9 @@ public class AgendamentoService {
         Veiculo veiculo = veiculoRepository.findById(request.veiculoId())
                 .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado."));
 
-        UUID cliente = veiculo.getCliente().getId();
+        UUID donoVeiculoId = veiculo.getCliente().getId();
 
-        if (cliente == null || !cliente.equals(clienteId)) {
+        if (donoVeiculoId == null || !donoVeiculoId.equals(clienteId)) {
             throw new ValidationException("O veículo informado não pertence ao cliente autenticado.");
         }
 
@@ -131,6 +136,22 @@ public class AgendamentoService {
 
         horarioDisponivelCache.invalidarCache(lavaJato.getId(), request.data());
 
+        String nomeServicos = "";
+
+        for(Servico servico: servicos){
+            nomeServicos.concat(" " + servico.getNome());
+        }
+
+
+        eventPublisher.publishEvent(new AgendamentoCriadoEvent(
+                agendamento.getId(),
+                cliente.getId(),
+                cliente.getPrimeiroNome(),
+                lavaJato.getId(),
+                nomeServicos,
+                LocalDateTime.of(agendamento.getData(), agendamento.getHora())
+        ));
+
         return salvo;
     }
     // Repete a operação se outra transação alterou o mesmo agendamento (conflito de versão).
@@ -160,15 +181,29 @@ public class AgendamentoService {
         if (agendamento.getStatusAgendamento() != StatusAgendamento.AGENDADO) {
             throw new BusinessException("Somente agendamentos ainda agendados podem ser cancelados pelo cliente.");
         }
+
+        StatusAgendamento statusAnterior = agendamento.getStatusAgendamento();
+
+
         agendamento.setStatusAgendamento(StatusAgendamento.CANCELADO);
 
-        UUID lavaJatoId = agendamento.getAgendamentoServicos()
+        LavaJato lavaJato = agendamento.getAgendamentoServicos()
                 .getFirst()
                 .getServico()
-                .getLavaJato()
-                .getId();
+                .getLavaJato();
 
-        horarioDisponivelCache.invalidarCache(lavaJatoId, agendamento.getData());
+        eventPublisher.publishEvent(new AgendamentoStatusAlteradoEvent(
+                agendamento.getId(),
+                clienteId,
+                lavaJato.getId(),
+                lavaJato.getNomeFantasia(),
+                statusAnterior,
+                agendamento.getStatusAgendamento()
+
+        ));
+
+
+        horarioDisponivelCache.invalidarCache(lavaJato.getId(), agendamento.getData());
     }
 
     @Transactional(readOnly = true)
@@ -210,7 +245,19 @@ public class AgendamentoService {
         boolean transicaoValida = agendamento.getStatusAgendamento() == StatusAgendamento.AGENDADO
                 && (novoStatus == StatusAgendamento.CONCLUIDO || novoStatus == StatusAgendamento.CANCELADO);
         if (!transicaoValida) throw new BusinessException("Transição de status não permitida.");
+        StatusAgendamento statusAnterior = agendamento.getStatusAgendamento();
         agendamento.setStatusAgendamento(novoStatus);
+
+
+        eventPublisher.publishEvent(new AgendamentoStatusAlteradoEvent(
+                agendamento.getId(),
+                agendamento.getVeiculo().getCliente().getId(),
+                lavaJatoId,
+                agendamento.getAgendamentoServicos().getFirst().getServico().getLavaJato().getNomeFantasia(),
+                statusAnterior,
+                novoStatus
+
+        ));
 
         horarioDisponivelCache.invalidarCache(lavaJatoId, agendamento.getData());
     }
