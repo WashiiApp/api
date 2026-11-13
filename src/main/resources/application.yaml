@@ -27,8 +27,13 @@ spring:
       port: 6379
 
 supabase:
+  project-ref: ${SUPABASE_PROJECT_REF}
   url: https://${SUPABASE_PROJECT_REF}.supabase.co
   public-key: ${SUPABASE_PUBLIC_KEY}
   secret-key: ${SECRET_KEY}
   storage:
     bucket: ${SUPABASE_STORAGE_BUCKET:fotos-perfil}
+    s3-endpoint: ${SUPABASE_S3_ENDPOINT:https://${SUPABASE_PROJECT_REF}.storage.supabase.co/storage/v1/s3}
+    region: ${SUPABASE_S3_REGION:sa-east-1}
+    access-key: ${SUPABASE_S3_ACCESS_KEY:}
+    secret-key: ${SUPABASE_S3_SECRET_KEY:}

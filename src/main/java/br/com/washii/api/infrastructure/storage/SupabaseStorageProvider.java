@@ -4,23 +4,22 @@ import br.com.washii.api.exception.ExternalServiceException;
 import br.com.washii.api.service.StorageProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
-import org.springframework.web.client.RestClientResponseException;
+import software.amazon.awssdk.core.exception.SdkClientException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
 
 @Component
 @RequiredArgsConstructor
 public class SupabaseStorageProvider implements StorageProvider {
 
-    private final RestClient restClient;
+    private final S3Client s3Client;
 
     @Value("${supabase.url}")
     private String supabaseUrl;
-
-    @Value("${supabase.secret-key}")
-    private String secretKey;
 
     @Value("${supabase.storage.bucket}")
     private String bucket;
@@ -28,39 +27,37 @@ public class SupabaseStorageProvider implements StorageProvider {
     @Override
     public String upload(String caminhoArquivo, byte[] conteudo, String contentType) {
         try {
-            restClient.post()
-                    .uri(supabaseUrl + "/storage/v1/object/" + bucket + "/" + caminhoArquivo)
-                    .header("apikey", secretKey)
-                    .header("Authorization", "Bearer " + secretKey)
-                    .header("x-upsert", "true")
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .body(conteudo)
-                    .retrieve()
-                    .toBodilessEntity();
+            PutObjectRequest putObjectRequest = PutObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(caminhoArquivo)
+                    .contentType(contentType)
+                    .build();
+
+            s3Client.putObject(putObjectRequest, RequestBody.fromBytes(conteudo));
 
             return supabaseUrl + "/storage/v1/object/public/" + bucket + "/" + caminhoArquivo;
 
-        } catch (RestClientResponseException exception) {
-            throw new ExternalServiceException("Não foi possível enviar o arquivo para o provedor de armazenamento.", exception);
-        } catch (RestClientException exception) {
-            throw new ExternalServiceException("Não foi possível conectar ao provedor de armazenamento.", exception);
+        } catch (S3Exception exception) {
+            throw new ExternalServiceException("Não foi possível enviar o arquivo para o provedor de armazenamento S3.", exception);
+        } catch (SdkClientException exception) {
+            throw new ExternalServiceException("Não foi possível conectar ao provedor de armazenamento S3.", exception);
         }
     }
 
     @Override
     public void excluir(String caminhoArquivo) {
         try {
-            restClient.delete()
-                    .uri(supabaseUrl + "/storage/v1/object/" + bucket + "/" + caminhoArquivo)
-                    .header("apikey", secretKey)
-                    .header("Authorization", "Bearer " + secretKey)
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (RestClientResponseException exception) {
-            throw new ExternalServiceException("Não foi possível excluir o arquivo no provedor de armazenamento.", exception);
-        } catch (RestClientException exception) {
-            throw new ExternalServiceException("Não foi possível conectar ao provedor de armazenamento.", exception);
+            DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+                    .bucket(bucket)
+                    .key(caminhoArquivo)
+                    .build();
+
+            s3Client.deleteObject(deleteObjectRequest);
+
+        } catch (S3Exception exception) {
+            throw new ExternalServiceException("Não foi possível excluir o arquivo no provedor de armazenamento S3.", exception);
+        } catch (SdkClientException exception) {
+            throw new ExternalServiceException("Não foi possível conectar ao provedor de armazenamento S3.", exception);
         }
     }
 }
-

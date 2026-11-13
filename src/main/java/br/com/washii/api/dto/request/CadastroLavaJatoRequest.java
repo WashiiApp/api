@@ -34,7 +34,7 @@ public record CadastroLavaJatoRequest (
         @Min(value = 1, message = "O fluxo simultâneo deve ser maior que zero.")
         Integer fluxoSimultaneo,
         @NotBlank(message = "O CNPJ é obrigatório.")
-        @Pattern(regexp = "(?:\\d{14}|\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2})", message = "Informe um CNPJ válido com 14 dígitos, com ou sem formatação.")
+        @Pattern(regexp = "\\d{14}|\\d{2}\\.\\d{3}\\.\\d{3}/\\d{4}-\\d{2}", message = "Informe um CNPJ válido com 14 dígitos, com ou sem formatação.")
         String cnpj,
         @NotBlank(message = "O número é obrigatório.")
         @Size(max = 10, message = "O número deve ter no máximo 10 caracteres.")

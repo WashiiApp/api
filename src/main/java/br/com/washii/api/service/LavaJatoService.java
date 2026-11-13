@@ -56,6 +56,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -311,7 +312,7 @@ public class LavaJatoService {
 
         for (Servico servico : servicos) {
             if (servico.getLavaJato() == null
-                    || !servico.getLavaJato().getId().equals(lavaJatoId)) {
+                    || !Objects.equals(servico.getLavaJato().getId(), lavaJatoId)) {
                 throw new ValidationException(
                         "Todos os serviços devem pertencer ao lava-jato informado."
                 );
@@ -424,13 +425,11 @@ public class LavaJatoService {
                 continue;
             }
 
-            if (inicioExistente.isAfter(inicioCandidato)
-                    && inicioExistente.isBefore(fimCandidato)) {
+            if (inicioExistente.isAfter(inicioCandidato)) {
                 limites.add(inicioExistente);
             }
 
-            if (fimExistente.isAfter(inicioCandidato)
-                    && fimExistente.isBefore(fimCandidato)) {
+            if (fimExistente.isBefore(fimCandidato)) {
                 limites.add(fimExistente);
             }
         }
