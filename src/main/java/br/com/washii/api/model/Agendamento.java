@@ -56,4 +56,10 @@ public class Agendamento {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private OffsetDateTime updatedAt;
+
+    //Controle de versão
+    @Version
+    @Column(name = "versao", nullable = false)
+    private Long versao;
+
 }

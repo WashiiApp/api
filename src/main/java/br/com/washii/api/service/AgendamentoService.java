@@ -15,6 +15,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.resilience.annotation.Retryable;
+
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -130,7 +133,16 @@ public class AgendamentoService {
 
         return salvo;
     }
-
+    // Repete a operação se outra transação alterou o mesmo agendamento (conflito de versão).
+    // Cada tentativa abre uma transação NOVA e relê o agendamento já atualizado, então a
+    // regra de negócio é reavaliada com o estado real (ex.: "já concluído, não pode cancelar").
+    // includes: só o conflito de versão é repetido; erros de negócio/validação NÃO são repetidos.
+    @Retryable(
+            includes = OptimisticLockingFailureException.class,
+            maxRetries = 2,   // 1 tentativa + até 2 repetições = 3 no total
+            delay = 50,       // ms de espera antes de repetir
+            jitter = 25       // variação aleatória (ms), para duas requisições não repetirem juntas
+    )
     @Transactional
     public void cancelarPeloCliente(UUID agendamentoId, UUID clienteId) {
         Agendamento agendamento = buscarAgendamentoOuLancar(agendamentoId);
@@ -159,6 +171,28 @@ public class AgendamentoService {
         horarioDisponivelCache.invalidarCache(lavaJatoId, agendamento.getData());
     }
 
+    @Transactional(readOnly = true)
+    public Agendamento buscarAgendamento(UUID usuarioId, UUID agendamentoId) {
+        // Busca o agendamento ou lança exceção se não existir
+        Agendamento agendamento = buscarAgendamentoOuLancar(agendamentoId);
+
+        // Valida se o usuario informado (Cliente ou Lava Jato) realmente tem permissão para ver este agendamento
+        boolean pertenceAoUsuario = validarSeAgendamentoPertenceAoUsuario(agendamento, usuarioId);
+
+        if (!pertenceAoUsuario) {
+            throw new IllegalArgumentException("O agendamento informado não pertence ao usuário especificado.");
+        }
+
+        return agendamento;
+    }
+
+
+    @Retryable(
+            includes = OptimisticLockingFailureException.class,
+            maxRetries = 2,
+            delay = 50,
+            jitter = 25
+    )
     @Transactional
     public void atualizarStatus(UUID agendamentoId, UUID lavaJatoId, StatusAgendamento novoStatus) {
         Agendamento agendamento = buscarAgendamentoOuLancar(agendamentoId);
@@ -179,21 +213,6 @@ public class AgendamentoService {
         agendamento.setStatusAgendamento(novoStatus);
 
         horarioDisponivelCache.invalidarCache(lavaJatoId, agendamento.getData());
-    }
-
-    @Transactional(readOnly = true)
-    public Agendamento buscarAgendamento(UUID usuarioId, UUID agendamentoId) {
-        // Busca o agendamento ou lança exceção se não existir
-        Agendamento agendamento = buscarAgendamentoOuLancar(agendamentoId);
-
-        // Valida se o usuario informado (Cliente ou Lava Jato) realmente tem permissão para ver este agendamento
-        boolean pertenceAoUsuario = validarSeAgendamentoPertenceAoUsuario(agendamento, usuarioId);
-
-        if (!pertenceAoUsuario) {
-            throw new IllegalArgumentException("O agendamento informado não pertence ao usuário especificado.");
-        }
-
-        return agendamento;
     }
 
     @Transactional(readOnly = true)

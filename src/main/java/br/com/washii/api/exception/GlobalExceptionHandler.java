@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -19,6 +20,9 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
+import jakarta.persistence.OptimisticLockException;
+import org.springframework.dao.OptimisticLockingFailureException;
+
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.stream.Collectors;
@@ -30,10 +34,7 @@ public class GlobalExceptionHandler {
             LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(ResourceNotFoundException.class)
-    public StandardError handleResourceNotFound(
-            ResourceNotFoundException exception,
-            HttpServletRequest request
-    ) {
+    public ResponseEntity<StandardError> handleResourceNotFound(ResourceNotFoundException exception, HttpServletRequest request) {
         return error(
                 HttpStatus.NOT_FOUND,
                 exception.getMessage(),
@@ -42,7 +43,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)
-    public StandardError handleInvalidCredentials(
+    public ResponseEntity<StandardError> handleInvalidCredentials(
             InvalidCredentialsException exception,
             HttpServletRequest request
     ) {
@@ -54,7 +55,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(BusinessException.class)
-    public StandardError handleBusiness(
+    public ResponseEntity<StandardError> handleBusiness(
             BusinessException exception,
             HttpServletRequest request
     ) {
@@ -66,7 +67,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ValidationException.class)
-    public StandardError handleValidation(
+    public ResponseEntity<StandardError> handleValidation(
             ValidationException exception,
             HttpServletRequest request
     ) {
@@ -78,7 +79,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ExternalServiceException.class)
-    public StandardError handleExternalService(
+    public ResponseEntity<StandardError> handleExternalService(
             ExternalServiceException exception,
             HttpServletRequest request
     ) {
@@ -92,7 +93,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public StandardError handleMethodArgumentNotValid(
+    public ResponseEntity<StandardError> handleMethodArgumentNotValid(
             MethodArgumentNotValidException exception,
             HttpServletRequest request
     ) {
@@ -118,7 +119,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ConstraintViolationException.class)
-    public StandardError handleConstraintViolation(
+    public ResponseEntity<StandardError> handleConstraintViolation(
             ConstraintViolationException exception,
             HttpServletRequest request
     ) {
@@ -143,7 +144,7 @@ public class GlobalExceptionHandler {
             MissingServletRequestParameterException.class,
             MethodArgumentTypeMismatchException.class
     })
-    public StandardError handleMalformedRequest(
+    public ResponseEntity<StandardError> handleMalformedRequest(
             HttpServletRequest request
     ) {
         log.warn(
@@ -159,7 +160,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public StandardError handleMethodNotSupported(
+    public ResponseEntity<StandardError> handleMethodNotSupported(
             HttpServletRequest request
     ) {
         log.warn(
@@ -175,7 +176,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoResourceFoundException.class)
-    public StandardError handleNoResourceFound(
+    public ResponseEntity<StandardError> handleNoResourceFound(
             HttpServletRequest request
     ) {
         log.warn(
@@ -191,7 +192,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public StandardError handleDataIntegrityViolation(
+    public ResponseEntity<StandardError> handleDataIntegrityViolation(
             DataIntegrityViolationException exception,
             HttpServletRequest request
     ) {
@@ -209,7 +210,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RestClientResponseException.class)
-    public StandardError handleAuthenticationProviderError(
+    public ResponseEntity<StandardError> handleAuthenticationProviderError(
             RestClientResponseException exception,
             HttpServletRequest request
     ) {
@@ -227,7 +228,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public StandardError handleResponseStatus(
+    public ResponseEntity<StandardError> handleResponseStatus(
             ResponseStatusException exception,
             HttpServletRequest request
     ) {
@@ -247,7 +248,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
-    public StandardError handleUnexpected(
+    public ResponseEntity<StandardError> handleUnexpected(
             Exception exception,
             HttpServletRequest request
     ) {
@@ -264,17 +265,30 @@ public class GlobalExceptionHandler {
         );
     }
 
-    private StandardError error(
+
+    private ResponseEntity<StandardError> error(
             HttpStatus status,
             String message,
             HttpServletRequest request
     ) {
-        return new StandardError(
+        StandardError body = new StandardError(
                 Instant.now(),
                 status.value(),
                 status.getReasonPhrase(),
                 message,
                 request.getRequestURI()
         );
+        return ResponseEntity.status(status).body(body);
     }
+    @ExceptionHandler({OptimisticLockingFailureException.class, OptimisticLockException.class})
+    public ResponseEntity<StandardError> handleOptimisticLock(Exception exception, HttpServletRequest request) {
+        log.warn("Conflito de bloqueio otimista na rota {}: {}",
+                request.getRequestURI(), exception.getMessage());
+        return error(
+                HttpStatus.CONFLICT,
+                "Este agendamento foi alterado por outra operação. Atualize os dados e tente novamente.",
+                request
+        );
+    }
+
 }
