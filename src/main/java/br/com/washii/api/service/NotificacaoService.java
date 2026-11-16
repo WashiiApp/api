@@ -32,7 +32,7 @@ public class NotificacaoService {
 
         Notificacao notificacao = new Notificacao();
         notificacao.setAgendamento(agendamentoRef);
-        notificacao.setTipoUsuario(tipoUsuario);
+        notificacao.setTipoRemetente(tipoUsuario);
         notificacao.setTitulo(titulo);
         notificacao.setMensagem(mensagem);
         notificacao.setData(LocalDate.now());

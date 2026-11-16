@@ -4,7 +4,6 @@ import br.com.washii.api.model.Notificacao;
 import br.com.washii.api.model.TipoUsuario;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -17,7 +16,7 @@ public record NotificacaoResponse(
         LocalDate data,
         LocalTime hora,
         boolean lida,
-        TipoUsuario tipoUsuario,
+        TipoUsuario tipoRemetente,
         OffsetDateTime createdAt
 ) {
     public static NotificacaoResponse fromEntity(Notificacao notificacao) {
@@ -33,7 +32,7 @@ public record NotificacaoResponse(
                 notificacao.getData(),
                 notificacao.getHora(),
                 notificacao.isLida(),
-                notificacao.getTipoUsuario(),
+                notificacao.getTipoRemetente(),
                 notificacao.getCreatedAt()
         );
     }

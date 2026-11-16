@@ -15,7 +15,7 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
     @Query("""
         SELECT n FROM Notificacao n
         WHERE n.agendamento.veiculo.cliente.id = :clienteId
-          AND n.tipoUsuario = :tipoUsuario
+          AND n.tipoRemetente = :tipoUsuario
         ORDER BY n.createdAt DESC
     """)
     List<Notificacao> buscarPorCliente(
@@ -27,7 +27,7 @@ public interface NotificacaoRepository extends JpaRepository<Notificacao, UUID> 
         SELECT DISTINCT n FROM Notificacao n
         JOIN n.agendamento.agendamentoServicos ags
         WHERE ags.servico.lavaJato.id = :lavaJatoId
-          AND n.tipoUsuario = :tipoUsuario
+         AND n.tipoRemetente = :tipoUsuario
         ORDER BY n.createdAt DESC
     """)
     List<Notificacao> buscarPorLavaJato(
