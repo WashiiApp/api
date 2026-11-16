@@ -16,12 +16,12 @@ public class NotificacaoController {
 
     private final NotificacaoService notificacaoService;
 
-    @GetMapping("/cliente/{clienteId}")
+    @GetMapping("/clientes/{clienteId}")
     public ResponseEntity<List<NotificacaoResponse>> listarPorCliente(@PathVariable UUID clienteId) {
         return ResponseEntity.ok(notificacaoService.listarRecebidasPorCliente(clienteId));
     }
 
-    @GetMapping("/lava-jato/{lavaJatoId}")
+    @GetMapping("/lava-jatos/{lavaJatoId}")
     public ResponseEntity<List<NotificacaoResponse>> listarPorLavaJato(@PathVariable UUID lavaJatoId) {
         return ResponseEntity.ok(notificacaoService.listarRecebidasPorLavaJato(lavaJatoId));
     }
