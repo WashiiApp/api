@@ -108,6 +108,9 @@ public class AgendamentoService {
             throw new ValidationException("A duração total calculada para o agendamento é inválida.");
         }
 
+        // Invalida o cache para forçar o cálculo dos horarios
+        horarioDisponivelCache.invalidarCache(lavaJato.getId(), request.data());
+
         HorariosDisponiveisResponse horariosDisponiveis = lavaJatoService.buscarHorariosDisponiveis(
                 lavaJato.getId(),
                 request.data(),
@@ -136,12 +139,7 @@ public class AgendamentoService {
 
         horarioDisponivelCache.invalidarCache(lavaJato.getId(), request.data());
 
-        String nomeServicos = "";
-
-        for(Servico servico: servicos){
-            nomeServicos.concat(" " + servico.getNome());
-        }
-
+        String nomeServicos = formatarNomesServicos(servicos);
 
         eventPublisher.publishEvent(new AgendamentoCriadoEvent(
                 agendamento.getId(),
@@ -309,5 +307,22 @@ public class AgendamentoService {
                         .map(LavaJato::getId)
                         .map(id -> id.equals(usuarioId))
                         .orElse(false));
+    }
+
+    private String formatarNomesServicos(List<Servico> servicos) {
+        if (servicos == null || servicos.isEmpty()) {
+            return "";
+        }
+
+        List<String> nomes = servicos.stream()
+                .map(Servico::getNome)
+                .filter(Objects::nonNull)
+                .toList();
+
+        if (nomes.isEmpty()) return "";
+        if (nomes.size() == 1) return nomes.getFirst();
+
+        String todosMenosUltimo = String.join(", ", nomes.subList(0, nomes.size() - 1));
+        return todosMenosUltimo + " e " + nomes.getLast();
     }
 }
