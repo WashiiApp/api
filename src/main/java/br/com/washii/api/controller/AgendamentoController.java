@@ -48,19 +48,19 @@ public class AgendamentoController {
         return UUID.fromString(authentication.getName());
     }
 
-    @GetMapping("/{usuarioId}/{agendamentoId}")
+    @GetMapping("/{agendamentoId}")
     public ResponseEntity<AgendamentoCriadoResponse> buscarAgendamento(
-            @PathVariable UUID usuarioId,
-            @PathVariable UUID agendamentoId
+            @PathVariable UUID agendamentoId,
+            Authentication authentication
     ){
-        Agendamento agendamento = agendamentoService.buscarAgendamento(usuarioId, agendamentoId);
+        Agendamento agendamento = agendamentoService.buscarAgendamento(usuarioId(authentication), agendamentoId);
 
         return ResponseEntity.ok(AgendamentoCriadoResponse.from(agendamento));
     }
 
-    @GetMapping("/{usuarioId}")
+    @GetMapping
     public ResponseEntity<List<AgendamentoCriadoResponse>> filtrar(
-            @PathVariable UUID usuarioId,
+            Authentication authentication,
             @RequestParam(required = false) String placaVeiculo,
             @RequestParam(required = false) StatusAgendamento status,
             @RequestParam(required = false) LocalDateTime dataInicio,
@@ -70,7 +70,7 @@ public class AgendamentoController {
     ){
 
         List<Agendamento> agendamentos =  agendamentoService
-                .filtrar(usuarioId, placaVeiculo, status, dataInicio, dataFim, categoriaVeiculoId);
+                .filtrar(usuarioId(authentication), placaVeiculo, status, dataInicio, dataFim, categoriaVeiculoId);
 
         List<AgendamentoCriadoResponse> response = agendamentos.stream()
                 .map(AgendamentoCriadoResponse::from)
