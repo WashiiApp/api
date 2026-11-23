@@ -1,0 +1,35 @@
+name: Solicitar funcionalidade
+description: Proponha uma melhoria para a API Washii.
+title: "feat(escopo): resumo da proposta"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema ou necessidade
+      description: Qual necessidade esta proposta atende?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposta
+      description: Descreva o comportamento desejado.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critérios de aceite
+      description: Liste resultados observáveis que definem a conclusão.
+      placeholder: |
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: api-impact
+    attributes:
+      label: Impacto na API
+      description: Informe rotas, payloads ou compatibilidade afetados, se souber.
+    validations:
+      required: false

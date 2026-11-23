@@ -12,4 +12,5 @@ public interface VeiculoRepository extends JpaRepository<Veiculo, UUID> {
     List<Veiculo> findByCliente(Cliente cliente);
     Boolean existsByIdAndCliente(UUID veiculoId, Cliente cliente);
     Optional<Veiculo> findByPlaca(String placa);
+    Optional<Veiculo> findByPlacaAndCliente(String placa, Cliente cliente);
 }
