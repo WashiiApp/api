@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,30 +54,34 @@ public class ClienteController {
     @PostMapping("/{clienteId}/veiculos")
     public ResponseEntity<Void> adicionarVeiculo(
             @PathVariable UUID clienteId,
-            @RequestBody VeiculoDTO request) {
+            @RequestBody VeiculoDTO request,
+            Authentication authentication) {
 
-        clienteService.adicionarVeiculo(clienteId, request);
+        clienteService.adicionarVeiculo(clienteId, usuarioId(authentication), request);
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping("/{clienteId}/veiculos")
-    public ResponseEntity<List<VeiculoDTO>> listarVeiculos(@PathVariable UUID clienteId) {
-        return ResponseEntity.ok(clienteService.listarVeiculos(clienteId));
+    public ResponseEntity<List<VeiculoDTO>> listarVeiculos(@PathVariable UUID clienteId,
+                                                            Authentication authentication) {
+        return ResponseEntity.ok(clienteService.listarVeiculos(clienteId, usuarioId(authentication)));
     }
 
     @GetMapping("/veiculos/placa/{placa}")
-    public ResponseEntity<VeiculoDTO> buscarVeiculoPorPlaca(@PathVariable String placa) {
-        return ResponseEntity.ok(clienteService.buscarVeiculoPorPlaca(placa));
+    public ResponseEntity<VeiculoDTO> buscarVeiculoPorPlaca(@PathVariable String placa,
+                                                             Authentication authentication) {
+        return ResponseEntity.ok(clienteService.buscarVeiculoPorPlaca(usuarioId(authentication), placa));
     }
 
     @PutMapping("/{clienteId}/veiculos/{veiculoId}")
     public ResponseEntity<Void> atualizarVeiculo(
             @PathVariable UUID clienteId,
             @PathVariable UUID veiculoId,
-            @RequestBody VeiculoDTO request) {
+            @RequestBody VeiculoDTO request,
+            Authentication authentication) {
 
-        clienteService.atualizarVeiculo(clienteId, veiculoId, request);
+        clienteService.atualizarVeiculo(clienteId, usuarioId(authentication), veiculoId, request);
 
         return ResponseEntity.noContent().build();
     }
@@ -84,9 +89,14 @@ public class ClienteController {
     @DeleteMapping("/{clienteId}/veiculos/{veiculoId}")
     public ResponseEntity<Void> removerVeiculo(
             @PathVariable UUID clienteId,
-            @PathVariable UUID veiculoId) {
+            @PathVariable UUID veiculoId,
+            Authentication authentication) {
 
-        clienteService.desativarVeiculo(clienteId, veiculoId);
+        clienteService.desativarVeiculo(clienteId, usuarioId(authentication), veiculoId);
         return ResponseEntity.noContent().build();
+    }
+
+    private UUID usuarioId(Authentication authentication) {
+        return UUID.fromString(authentication.getName());
     }
 }

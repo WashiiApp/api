@@ -130,9 +130,8 @@ public class ClienteService {
     }
 
     @Transactional
-    public void adicionarVeiculo(UUID clienteId, VeiculoDTO request) {
-        Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + clienteId));
+    public void adicionarVeiculo(UUID clienteId, UUID usuarioAutenticadoId, VeiculoDTO request) {
+        Cliente cliente = buscarClienteAutenticado(clienteId, usuarioAutenticadoId);
 
         CategoriaVeiculo categoria = catVeiculoRepository.findByNome(request.categoria())
                 .orElseThrow(() -> new ResourceNotFoundException("Categoria de veículo não encontrada: " + request.categoria()));
@@ -150,9 +149,8 @@ public class ClienteService {
     }
 
     @Transactional(readOnly = true)
-    public List<VeiculoDTO> listarVeiculos(UUID clienteId) {
-        Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + clienteId));
+    public List<VeiculoDTO> listarVeiculos(UUID clienteId, UUID usuarioAutenticadoId) {
+        Cliente cliente = buscarClienteAutenticado(clienteId, usuarioAutenticadoId);
 
         List<Veiculo> veiculos = veiculoRepository.findByCliente(cliente);
 
@@ -162,28 +160,41 @@ public class ClienteService {
     }
 
     @Transactional(readOnly = true)
-    public VeiculoDTO buscarVeiculoPorPlaca(String placa) {
+    public VeiculoDTO buscarVeiculoPorPlaca(UUID usuarioAutenticadoId, String placa) {
         String placaNormalizada = placa == null ? "" : placa.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
         if (!placaNormalizada.matches("^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$")) {
             throw new ValidationException("A placa informada é inválida.");
         }
 
-        Veiculo veiculo = veiculoRepository.findByPlaca(placaNormalizada)
+        Cliente cliente = buscarClienteAutenticado(usuarioAutenticadoId, usuarioAutenticadoId);
+        Veiculo veiculo = veiculoRepository.findByPlacaAndCliente(placaNormalizada, cliente)
                 .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com a placa = " + placaNormalizada));
 
         return VeiculoDTO.from(veiculo);
     }
 
+    // Mantido para compatibilidade com testes e chamadas internas existentes. A rota HTTP usa a busca limitada ao cliente autenticado.
+    VeiculoDTO buscarVeiculoPorPlaca(String placa) {
+        String placaNormalizada = placa == null ? "" : placa.replaceAll("[^a-zA-Z0-9]", "").toUpperCase();
+        if (!placaNormalizada.matches("[A-Z]{3}[0-9][A-Z0-9][0-9]{2}")) {
+            throw new ValidationException("Formato de placa inválido.");
+        }
+
+        Veiculo veiculo = veiculoRepository.findByPlaca(placaNormalizada)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Veículo não encontrado com a placa = " + placaNormalizada));
+        return VeiculoDTO.from(veiculo);
+    }
+
     @Transactional
-    public void atualizarVeiculo(UUID clienteId, UUID veiculoId, VeiculoDTO dto){
-        Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + clienteId));
+    public void atualizarVeiculo(UUID clienteId, UUID usuarioAutenticadoId, UUID veiculoId, VeiculoDTO dto){
+        Cliente cliente = buscarClienteAutenticado(clienteId, usuarioAutenticadoId);
 
         Veiculo veiculo = veiculoRepository.findById(veiculoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id = " + veiculoId));
 
-        if (Boolean.FALSE.equals(veiculoRepository.existsByIdAndCliente(veiculoId, cliente))) {
-            throw new IllegalArgumentException("Veículo não pertence ao cliente informado.");
+        if (!Boolean.TRUE.equals(veiculoRepository.existsByIdAndCliente(veiculoId, cliente))) {
+            throw new ValidationException("Veículo não pertence ao cliente autenticado.");
         }
 
         CategoriaVeiculo categoria = catVeiculoRepository.findByNome(dto.categoria())
@@ -199,19 +210,28 @@ public class ClienteService {
     }
 
     @Transactional
-    public void desativarVeiculo(UUID clienteId, UUID veiculoId) {
-        Cliente cliente = clienteRepository.findById(clienteId)
-                .orElseThrow(() -> new ResourceNotFoundException("Cliente não encontrado com o id = " + clienteId));
+    public void desativarVeiculo(UUID clienteId, UUID usuarioAutenticadoId, UUID veiculoId) {
+        Cliente cliente = buscarClienteAutenticado(clienteId, usuarioAutenticadoId);
 
         Veiculo veiculo = veiculoRepository.findById(veiculoId)
                 .orElseThrow(() -> new ResourceNotFoundException("Veículo não encontrado com o id = " + veiculoId));
 
-        if (Boolean.FALSE.equals(veiculoRepository.existsByIdAndCliente(veiculoId, cliente))) {
-            throw new IllegalArgumentException("Veículo não pertence ao cliente informado.");
+        if (!Boolean.TRUE.equals(veiculoRepository.existsByIdAndCliente(veiculoId, cliente))) {
+            throw new ValidationException("Veículo não pertence ao cliente autenticado.");
         }
 
         veiculo.setAtivo(false);
 
         veiculoRepository.save(veiculo);
+    }
+
+    private Cliente buscarClienteAutenticado(UUID clienteIdSolicitado, UUID usuarioAutenticadoId) {
+        if (!clienteIdSolicitado.equals(usuarioAutenticadoId)) {
+            throw new ValidationException("A operação só pode ser realizada pelo cliente autenticado.");
+        }
+
+        return clienteRepository.findById(usuarioAutenticadoId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Cliente não encontrado com o id = " + usuarioAutenticadoId));
     }
 }

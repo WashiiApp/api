@@ -1,0 +1,32 @@
+name: Relatar bug
+description: Reporte um comportamento incorreto na API.
+title: "fix(escopo): resumo do problema"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Descrição
+      description: O que está acontecendo?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportamento esperado
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Como reproduzir
+      description: Inclua rota, payload de exemplo sem dados sensíveis e pré-condições.
+    validations:
+      required: false
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impacto
+      description: Informe o impacto para clientes ou para o funcionamento da API.
+    validations:
+      required: false
