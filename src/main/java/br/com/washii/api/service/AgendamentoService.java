@@ -16,6 +16,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -186,10 +188,14 @@ public class AgendamentoService {
 
         agendamento.setStatusAgendamento(StatusAgendamento.CANCELADO);
 
-        LavaJato lavaJato = agendamento.getAgendamentoServicos()
-                .getFirst()
-                .getServico()
-                .getLavaJato();
+        LavaJato lavaJato = Optional.ofNullable(agendamento.getAgendamentoServicos())
+                .orElseGet(List::of).stream()
+                .map(AgendamentoServico::getServico)
+                .filter(Objects::nonNull)
+                .map(Servico::getLavaJato)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("O agendamento não possui um lava-jato associado."));
 
         eventPublisher.publishEvent(new AgendamentoStatusAlteradoEvent(
                 agendamento.getId(),
@@ -214,7 +220,7 @@ public class AgendamentoService {
         boolean pertenceAoUsuario = validarSeAgendamentoPertenceAoUsuario(agendamento, usuarioId);
 
         if (!pertenceAoUsuario) {
-            throw new IllegalArgumentException("O agendamento informado não pertence ao usuário especificado.");
+            throw new ValidationException("O agendamento informado não pertence ao usuário autenticado.");
         }
 
         return agendamento;
@@ -262,14 +268,18 @@ public class AgendamentoService {
     }
 
     @Transactional(readOnly = true)
-    public List<Agendamento> filtrar(
+    public Page<Agendamento> filtrar(
             UUID usuarioId,
             String placaVeiculo,
             StatusAgendamento status,
             LocalDateTime dataInicio,
             LocalDateTime dataFim,
-            UUID categoriaVeiculoId
+            UUID categoriaVeiculoId,
+            Pageable pageable
     ) {
+        if (dataInicio != null && dataFim != null && dataInicio.isAfter(dataFim)) {
+            throw new ValidationException("A data inicial não pode ser posterior à data final.");
+        }
         Specification<Agendamento> specs = Specification
                 .where(AgendamentoSpecs.idUsuarioEquals(usuarioId))
                 .and(AgendamentoSpecs.placaVeiculoEqual(placaVeiculo))
