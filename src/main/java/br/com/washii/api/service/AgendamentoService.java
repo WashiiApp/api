@@ -15,6 +15,8 @@ import br.com.washii.api.service.cache.HorarioDisponivelRedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -261,13 +263,14 @@ public class AgendamentoService {
     }
 
     @Transactional(readOnly = true)
-    public List<Agendamento> filtrar(
+    public Page<Agendamento> filtrar(
             UUID usuarioId,
             String placaVeiculo,
             StatusAgendamento status,
             LocalDateTime dataInicio,
             LocalDateTime dataFim,
-            UUID categoriaVeiculoId
+            UUID categoriaVeiculoId,
+            Pageable pageable
     ) {
         Specification<Agendamento> specs = Specification
                 .where(AgendamentoSpecs.idUsuarioEquals(usuarioId))
@@ -276,7 +279,7 @@ public class AgendamentoService {
                 .and(AgendamentoSpecs.categoriaVeiculoIdEquals(categoriaVeiculoId))
                 .and(AgendamentoSpecs.dataBetween(dataInicio, dataFim));
 
-        return agendamentoRepository.findAll(specs);
+        return agendamentoRepository.findAll(specs, pageable);
     }
 
     private Agendamento buscarAgendamentoOuLancar(UUID id) {
