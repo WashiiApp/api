@@ -15,6 +15,7 @@ import br.com.washii.api.service.cache.HorarioDisponivelRedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -276,7 +277,8 @@ public class AgendamentoService {
                 .and(AgendamentoSpecs.categoriaVeiculoIdEquals(categoriaVeiculoId))
                 .and(AgendamentoSpecs.dataBetween(dataInicio, dataFim));
 
-        return agendamentoRepository.findAll(specs);
+        return agendamentoRepository.findAll(specs, Sort.by(
+                Sort.Order.asc("data"), Sort.Order.asc("hora"), Sort.Order.asc("id")));
     }
 
     private Agendamento buscarAgendamentoOuLancar(UUID id) {
