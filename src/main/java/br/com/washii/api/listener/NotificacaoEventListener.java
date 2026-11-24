@@ -53,7 +53,7 @@ public class NotificacaoEventListener {
         try {
             String titulo = "Atualização no seu agendamento";
             String mensagem = String.format(
-                    "O estabelecimento %s alterou o status do seu agendamento #%d para: %s.",
+                    "O estabelecimento %s alterou o status do seu agendamento #%s para: %s.",
                     event.nomeLavaJato(),
                     event.agendamentoId(),
                     event.novoStatus()
