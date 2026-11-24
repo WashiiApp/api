@@ -10,6 +10,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,8 +62,9 @@ public class AgendamentoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<AgendamentoCriadoResponse>> filtrar(
+    public ResponseEntity<Page<AgendamentoCriadoResponse>> filtrar(
             Authentication authentication,
+            @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) String placaVeiculo,
             @RequestParam(required = false) StatusAgendamento status,
             @RequestParam(required = false) LocalDateTime dataInicio,
@@ -69,12 +73,9 @@ public class AgendamentoController {
 
     ){
 
-        List<Agendamento> agendamentos =  agendamentoService
-                .filtrar(usuarioId(authentication), placaVeiculo, status, dataInicio, dataFim, categoriaVeiculoId);
-
-        List<AgendamentoCriadoResponse> response = agendamentos.stream()
-                .map(AgendamentoCriadoResponse::from)
-                .toList();
+        Page<AgendamentoCriadoResponse> response = agendamentoService
+                .filtrar(usuarioId(authentication), placaVeiculo, status, dataInicio, dataFim, categoriaVeiculoId, pageable)
+                .map(AgendamentoCriadoResponse::from);
 
         return ResponseEntity.ok(response);
     }
