@@ -187,10 +187,14 @@ public class AgendamentoService {
 
         agendamento.setStatusAgendamento(StatusAgendamento.CANCELADO);
 
-        LavaJato lavaJato = agendamento.getAgendamentoServicos()
-                .getFirst()
-                .getServico()
-                .getLavaJato();
+        LavaJato lavaJato = Optional.ofNullable(agendamento.getAgendamentoServicos())
+                .orElseGet(List::of).stream()
+                .map(AgendamentoServico::getServico)
+                .filter(Objects::nonNull)
+                .map(Servico::getLavaJato)
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElseThrow(() -> new BusinessException("O agendamento não possui um lava-jato associado."));
 
         eventPublisher.publishEvent(new AgendamentoStatusAlteradoEvent(
                 agendamento.getId(),
