@@ -269,6 +269,9 @@ public class AgendamentoService {
             LocalDateTime dataFim,
             UUID categoriaVeiculoId
     ) {
+        if (dataInicio != null && dataFim != null && dataInicio.isAfter(dataFim)) {
+            throw new ValidationException("A data inicial não pode ser posterior à data final.");
+        }
         Specification<Agendamento> specs = Specification
                 .where(AgendamentoSpecs.idUsuarioEquals(usuarioId))
                 .and(AgendamentoSpecs.placaVeiculoEqual(placaVeiculo))
