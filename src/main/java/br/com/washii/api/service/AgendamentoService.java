@@ -219,7 +219,7 @@ public class AgendamentoService {
         boolean pertenceAoUsuario = validarSeAgendamentoPertenceAoUsuario(agendamento, usuarioId);
 
         if (!pertenceAoUsuario) {
-            throw new IllegalArgumentException("O agendamento informado não pertence ao usuário especificado.");
+            throw new ValidationException("O agendamento informado não pertence ao usuário autenticado.");
         }
 
         return agendamento;
