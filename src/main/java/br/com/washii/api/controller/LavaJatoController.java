@@ -13,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
 
 import br.com.washii.api.dto.response.HorariosDisponiveisResponse;
 import java.time.LocalDate;
@@ -141,6 +142,22 @@ public class LavaJatoController {
     ){
         servicoService.deletarServico(lavaJatoId, servicoId);
         return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/{lavaJatoId}/servicos/{servicoId}/status")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void atualizarStatusServico(
+            @PathVariable UUID lavaJatoId,
+            @PathVariable UUID servicoId,
+            @Valid @RequestBody AtualizarStatusServicoRequest request,
+            Authentication authentication
+    ) {
+        servicoService.atualizarStatusServico(
+                lavaJatoId,
+                UUID.fromString(authentication.getName()),
+                servicoId,
+                request.ativo()
+        );
     }
 
     //Avaliação de Serviços
