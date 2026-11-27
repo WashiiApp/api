@@ -3,12 +3,14 @@ package br.com.washii.api.service;
 import br.com.washii.api.dto.request.AvaliacaoRequest;
 import br.com.washii.api.dto.request.CadastroServicoRequest;
 import br.com.washii.api.dto.request.CategoriaVeiculoServicoRequest;
+import br.com.washii.api.dto.request.AtualizarStatusServicoRequest;
 import br.com.washii.api.dto.response.AvaliacaoResponse;
 import br.com.washii.api.dto.response.ClienteResponse;
 import br.com.washii.api.dto.response.ServicoResponse;
 import br.com.washii.api.model.*;
 import br.com.washii.api.repository.*;
 import br.com.washii.api.service.cache.ServicoRedisService;
+import br.com.washii.api.exception.ValidationException;
 import com.github.benmanes.caffeine.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.NonNull;
@@ -84,6 +86,19 @@ public class ServicoService {
         Servico servico = validarEObterServico(lavaJatoId, servicoId);
         servico.setAtivo(false);
         servicoRepository.save(servico);
+        servicoCache.invalidarCache(lavaJatoId);
+    }
+
+    @Transactional
+    public void atualizarStatusServico(UUID lavaJatoId, UUID usuarioId, UUID servicoId, boolean ativo) {
+        if (!lavaJatoId.equals(usuarioId)) {
+            throw new ValidationException("A operação só pode ser executada pelo lava-jato autenticado.");
+        }
+
+        if (servicoRepository.atualizarStatus(servicoId, lavaJatoId, ativo) == 0) {
+            throw new ValidationException("O serviço não foi encontrado para o lava-jato informado.");
+        }
+
         servicoCache.invalidarCache(lavaJatoId);
     }
 
