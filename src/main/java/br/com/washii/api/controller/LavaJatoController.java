@@ -160,7 +160,7 @@ public class LavaJatoController {
     public ResponseEntity<Void> salvarAvaliacao(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
-            @RequestBody AvaliacaoRequest request
+            @Valid @RequestBody AvaliacaoRequest request
     ){
         servicoService.salvarAvaliacao(lavaJatoId, servicoId, request);
         return ResponseEntity.noContent().build();
