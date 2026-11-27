@@ -101,7 +101,7 @@ public class LavaJatoController {
     @PostMapping("/{lavaJatoId}/servicos")
     public ResponseEntity<Void> salvarServico(
             @PathVariable UUID lavaJatoId,
-            @RequestBody CadastroServicoRequest request)
+            @Valid @RequestBody CadastroServicoRequest request)
     {
         servicoService.salvarServico(lavaJatoId, request);
 
@@ -129,7 +129,7 @@ public class LavaJatoController {
     public ResponseEntity<Void> atualizarServico(
             @PathVariable UUID lavaJatoId,
             @PathVariable UUID servicoId,
-            @RequestBody CadastroServicoRequest request)
+            @Valid @RequestBody CadastroServicoRequest request)
     {
         servicoService.atualizarServico(lavaJatoId, servicoId, request);
         return ResponseEntity.noContent().build();

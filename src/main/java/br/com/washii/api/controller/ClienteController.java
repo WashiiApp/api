@@ -54,7 +54,7 @@ public class ClienteController {
     @PostMapping("/{clienteId}/veiculos")
     public ResponseEntity<Void> adicionarVeiculo(
             @PathVariable UUID clienteId,
-            @RequestBody VeiculoDTO request,
+            @Valid @RequestBody VeiculoDTO request,
             Authentication authentication) {
 
         clienteService.adicionarVeiculo(clienteId, usuarioId(authentication), request);
@@ -78,7 +78,7 @@ public class ClienteController {
     public ResponseEntity<Void> atualizarVeiculo(
             @PathVariable UUID clienteId,
             @PathVariable UUID veiculoId,
-            @RequestBody VeiculoDTO request,
+            @Valid @RequestBody VeiculoDTO request,
             Authentication authentication) {
 
         clienteService.atualizarVeiculo(clienteId, usuarioId(authentication), veiculoId, request);
